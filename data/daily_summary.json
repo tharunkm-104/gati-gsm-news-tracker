@@ -400,9 +400,9 @@
   },
   {
     "date": "2026-09-29",
-    "green": 0,
-    "yellow": 0,
-    "red": 3,
-    "total": 3
+    "green": 1,
+    "yellow": 1,
+    "red": 5,
+    "total": 7
   }
 ]
