@@ -2,370 +2,322 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>GATI — Labour Mobility Sentiment Tracker</title>
-
-<!-- Open Graph / Slack unfurl preview.
-     Replace the og:url and og:image domain below with your actual GitHub
-     Pages URL once you confirm it (looks like https://<user>.github.io/<repo>/).
-     og:image points at QuickChart, which renders the config in the URL into
-     a PNG on the fly — no image file to host. The counts baked into it here
-     are a snapshot; see the note in daily-update.yml about keeping it fresh. -->
-<meta property="og:type" content="website">
-<meta property="og:title" content="GATI — Labour Mobility Sentiment Tracker">
-<meta property="og:description" content="Live daily read on how global mobility & migration news is tilting for India's labour-export ambitions — tracked from curated briefings, updated weekday mornings.">
-<meta property="og:url" content="https://tharunkm-104.github.io/gati-mobility-sentiment-tracker/">
-<meta property="og:image" content="https://quickchart.io/chart?width=1200&height=630&backgroundColor=white&c={type:'doughnut',data:{labels:['Positive','Neutral','Negative'],datasets:[{data:[95,71,94],backgroundColor:['%232f9e6e','%23f2a93c','%23e05353']}]},options:{plugins:{legend:{position:'bottom',labels:{font:{size:22}}},title:{display:true,text:'GATI Mobility Sentiment Tracker',font:{size:28}}}}}">
-<meta property="og:image:width" content="1200">
-<meta property="og:image:height" content="630">
-<meta name="twitter:card" content="summary_large_image">
-
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Further Analysis — GSM News Tracker</title>
+<link rel="stylesheet" href="./assets/gati.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
-<style>
-  :root{
-    --teal-dark:#0a4f4e;
-    --teal:#0b6b68;
-    --teal-light:#e8f3f2;
-    --gold:#f2a93c;
-    --gold-dark:#d98f1c;
-    --red:#e05353;
-    --green:#2f9e6e;
-    --amber:#f2a93c;
-    --ink:#17272a;
-    --muted:#5f7574;
-    --line:#dfe9e8;
-    --card:#ffffff;
-  }
-  *{box-sizing:border-box;}
-  body{
-    margin:0; padding:0;
-    font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
-    background:#fbfdfd;
-    color:var(--ink);
-  }
-  .wrap{max-width:1080px;margin:0 auto;padding:36px 24px 56px;}
-
-  .eyebrow{
-    display:inline-flex;align-items:center;gap:8px;
-    color:var(--gold-dark); font-weight:700; font-size:12.5px;
-    letter-spacing:.09em; text-transform:uppercase;
-  }
-  .eyebrow::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--gold);}
-  h1{
-    margin:10px 0 8px; font-size:32px; line-height:1.15; color:var(--teal-dark); font-weight:800;
-    letter-spacing:-0.01em;
-  }
-  .sub{
-    color:var(--muted); font-size:15.5px; line-height:1.6; max-width:760px; margin:0 0 4px;
-  }
-  .meta-line{
-    margin-top:14px; padding-top:14px; border-top:1px solid var(--line);
-    display:flex; flex-wrap:wrap; gap:18px; font-size:12.5px; color:var(--muted);
-  }
-  .meta-line b{color:var(--ink);}
-  .dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px;position:relative;top:-1px;}
-
-  .range-row{
-    display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px;
-    margin-top:28px;
-  }
-  .range-label{font-size:12.5px; color:var(--muted); font-weight:600;}
-  .range-toggle{display:flex; gap:6px; background:var(--teal-light); padding:4px; border-radius:10px;}
-  .range-toggle button{
-    border:none; background:transparent; padding:6px 13px; border-radius:7px;
-    font-size:12.5px; font-weight:700; color:var(--teal-dark); cursor:pointer;
-    font-family:inherit;
-  }
-  .range-toggle button.active{background:var(--teal); color:#fff;}
-
-  .stats{
-    display:grid; grid-template-columns:repeat(3,1fr); gap:20px; margin:18px 0 8px;
-  }
-  .stat{
-    background:var(--card); border-radius:14px; padding:26px 18px 22px; text-align:center;
-    border:1px solid var(--line); position:relative;
-  }
-  .stat .badge{
-    width:52px;height:52px;border-radius:50%;
-    display:flex;align-items:center;justify-content:center;
-    margin:-46px auto 12px; font-weight:800; font-size:15px; color:#fff;
-    box-shadow:0 4px 10px rgba(0,0,0,.12);
-  }
-  .stat.pos .badge{background:var(--green);}
-  .stat.neu .badge{background:var(--amber);}
-  .stat.neg .badge{background:var(--red);}
-  .stat .pct{font-size:30px;font-weight:800;color:var(--teal-dark);}
-  .stat .label{font-size:13px;font-weight:700;color:var(--ink);margin-top:2px;}
-  .stat .count{font-size:12px;color:var(--muted);margin-top:4px;}
-
-  .card{
-    background:var(--card); border:1px solid var(--line); border-radius:14px;
-    padding:24px 24px 18px; margin-top:22px;
-  }
-  .card h2{
-    font-size:15px; color:var(--teal-dark); margin:0 0 3px; font-weight:800;
-  }
-  .card p.desc{margin:0 0 16px; font-size:13px; color:var(--muted); line-height:1.55; max-width:680px;}
-  .chart-box{position:relative;}
-  .legend-row{display:flex; gap:18px; font-size:12px; color:var(--muted); margin-top:10px; flex-wrap:wrap;}
-  .legend-row span{display:flex;align-items:center;gap:6px;}
-
-  .mix-row{display:flex; gap:26px; align-items:center; flex-wrap:wrap;}
-  .mix-bar{flex:1; min-width:260px;}
-  .bar-track{
-    display:flex; height:22px; border-radius:11px; overflow:hidden; border:1px solid var(--line);
-    background:var(--teal-light);
-  }
-  .bar-seg{height:100%;}
-  .bar-labels{display:flex; justify-content:space-between; font-size:11.5px; color:var(--muted); margin-top:8px;}
-
-  .state-msg{
-    padding:18px 0; font-size:13px; color:var(--muted); font-style:italic;
-  }
-  .state-msg.error{color:var(--red);}
-
-  .pager{
-    display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap;
-    margin-top:34px;
-  }
-  .pager a{
-    display:inline-flex; align-items:center; gap:10px; text-decoration:none;
-    padding:11px 20px; border-radius:10px; border:1px solid var(--line); background:var(--card);
-    color:var(--teal-dark); font-weight:800; font-size:14px; transition:background .15s, color .15s, border-color .15s;
-  }
-  .pager a:hover{background:var(--teal); border-color:var(--teal); color:#fff;}
-  .pager .ar{font-size:18px; line-height:1; color:var(--gold-dark); transition:color .15s, transform .15s;}
-  .pager a:hover .ar{color:#fff;}
-  .pager a.prev:hover .ar{transform:translateX(-3px);}
-  .pager a.next:hover .ar{transform:translateX(3px);}
-
-  footer{
-    margin-top:30px; padding-top:16px; border-top:1px solid var(--line);
-    font-size:11.5px; color:var(--muted); line-height:1.6;
-  }
-  footer b{color:var(--ink);}
-  .proto-tag{
-    display:inline-block; margin-top:10px; padding:4px 10px; border-radius:20px;
-    background:var(--teal-light); color:var(--teal-dark); font-weight:700; font-size:11px;
-  }
-
-  @media (max-width:640px){
-    .stats{grid-template-columns:1fr;}
-    h1{font-size:26px;}
-    .range-row{flex-direction:column; align-items:flex-start;}
-  }
-</style>
 </head>
 <body>
-<div class="wrap">
 
-  <div class="eyebrow">GATI Resource Center · Live Tracker</div>
-  <h1>Labour Mobility Sentiment Tracker</h1>
-  <p class="sub">
-    A running read on how the daily global mobility &amp; migration news flow is tilting for India's
-    labour-export ambitions.
-  </p>
+<div class="topbar"><div class="topbar-in">
+  <a class="brand" href="./index.html">GATI · GSM News Tracker</a>
+  <nav class="tabs">
+    <a href="./index.html">Dashboard</a>
+    <a href="./feed.html" data-carry="./feed.html">Daily feed</a>
+    <a href="./analysis.html" class="active" data-carry="./analysis.html">Analysis</a>
+  </nav>
+</div></div>
 
-  <div class="meta-line">
-    <span><b>Window:</b> <span id="windowLabel">loading…</span></span>
-    <span><b>Items tagged:</b> <span id="totalItemsMeta">–</span></span>
-    <span><b>Briefings covered:</b> <span id="totalDaysMeta">–</span></span>
-    <span><b>Last updated:</b> <span id="lastUpdated">–</span></span>
-  </div>
+<div class="page">
+  <main>
+    <div class="eyebrow">GATI Resource Center · Further Analysis</div>
+    <h1>Where is the news turning — and for whom?</h1>
+    <p class="sub">Slice the full briefing log by country, theme, sentiment, focus bucket, source or period. Everything on this page — the numbers, the takeaways and every chart — recalculates from your filters. Click a bar, row or cell to drill in.</p>
 
-  <div class="range-row">
-    <span class="range-label">Show:</span>
-    <div class="range-toggle" id="rangeToggle">
-      <button data-range="7">7D</button>
-      <button data-range="30">30D</button>
-      <button data-range="90" class="active">90D</button>
-      <button data-range="365">1Y</button>
-      <button data-range="all">All</button>
-    </div>
-  </div>
+    <button type="button" class="filters-toggle" id="filtersToggle">Show filters</button>
+    <div class="chips" id="chips" style="display:none"></div>
 
-  <div class="stats">
-    <div class="stat pos">
-      <div class="badge" id="posPctBadge">–</div>
-      <div class="pct" id="posPct">–</div>
-      <div class="label">Positive</div>
-      <div class="count" id="posCount"></div>
-    </div>
-    <div class="stat neu">
-      <div class="badge" id="neuPctBadge">–</div>
-      <div class="pct" id="neuPct">–</div>
-      <div class="label">Neutral</div>
-      <div class="count" id="neuCount"></div>
-    </div>
-    <div class="stat neg">
-      <div class="badge" id="negPctBadge">–</div>
-      <div class="pct" id="negPct">–</div>
-      <div class="label">Negative</div>
-      <div class="count" id="negCount"></div>
-    </div>
-  </div>
+    <div id="stateMsg" class="state-msg">Loading latest data…</div>
+    <div id="content" style="display:none">
+      <div class="kpis" id="kpis"></div>
 
-  <div class="card">
-    <h2>Sentiment mix, selected window</h2>
-    <p class="desc">Every item tagged across briefings in the selected window, combined into one bar.</p>
-    <div class="mix-row">
-      <div class="mix-bar">
-        <div class="bar-track" id="mixTrack"></div>
-        <div class="bar-labels"><span>0%</span><span>50%</span><span>100%</span></div>
+      <div class="card take"><h2>What stands out</h2><p class="desc">Auto-written from the items currently selected.</p><ul id="takeaways"></ul></div>
+
+      <div class="card">
+        <h2>Sentiment over time</h2>
+        <p class="desc">Weekly item counts by sentiment (bars, left axis) and net sentiment — positive share minus negative share (line, right axis). Larger dots mean more items behind that week's reading; empty weeks are stretches with no briefings on file.</p>
+        <div class="chart-box"><canvas id="timeChart"></canvas></div>
+        <div class="legend-row">
+          <span><i class="dot" style="background:var(--green)"></i>Positive Developments</span>
+          <span><i class="dot" style="background:var(--amber)"></i>Neutral Developments</span>
+          <span><i class="dot" style="background:var(--red)"></i>Negative Developments</span>
+          <span><i class="dot" style="background:var(--teal-dark)"></i>Net sentiment (right axis)</span>
+        </div>
+      </div>
+
+      <div class="two">
+        <div class="card">
+          <div class="card-h"><div><h2>Sentiment by country</h2><p class="desc">Negative items pull left, positive pull right. Destination and competitor countries only.</p></div>
+            <div class="mini-seg" id="cSort"><button type="button" data-s="volume" class="active">By volume</button><button type="button" data-s="net">By net</button></div></div>
+          <div id="countryBars"></div>
+        </div>
+        <div class="card">
+          <h2>Sentiment by theme</h2>
+          <p class="desc">Share of positive, neutral and negative items within each theme.</p>
+          <div id="themeBars"></div>
+          <div class="legend-row" style="margin-top:14px">
+            <span><i class="dot" style="background:var(--green)"></i>Positive Developments</span>
+            <span><i class="dot" style="background:var(--amber)"></i>Neutral Developments</span>
+            <span><i class="dot" style="background:var(--red)"></i>Negative Developments</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Country × theme heatmap</h2>
+        <p class="desc">Where the good and bad news actually sits. Each cell shows the item count; colour is net sentiment (fainter where fewer items). Click a cell to filter to that country and theme.</p>
+        <div class="hm-wrap" id="heatmap"></div>
+        <div class="hm-legend"><span>Net negative</span><div class="g"></div><span>Net positive</span></div>
+      </div>
+
+      <div class="two">
+        <div class="card">
+          <h2>Briefing focus</h2>
+          <p class="desc">The prompt's buckets. An item can sit in more than one.</p>
+          <div id="bucketBars"></div>
+        </div>
+        <div class="card">
+          <h2>Where the news comes from</h2>
+          <p class="desc">Top publishers by items logged, coloured by sentiment. <span style="color:#b23a3a;font-weight:700">✕</span> marks sources on the prompt's exclude list.</p>
+          <div id="sourceBars"></div>
+        </div>
       </div>
     </div>
-  </div>
 
-  <div class="card">
-    <h2>Daily item volume by sentiment</h2>
-    <p class="desc">Each bar is one Daily Briefing; height is the number of items tagged that day, split by colour. Gaps are days without a briefing on file.</p>
-    <div class="chart-box"><canvas id="stackChart" height="90"></canvas></div>
-    <div class="legend-row">
-      <span><span class="dot" style="background:var(--green)"></span>Positive for India mobility interests</span>
-      <span><span class="dot" style="background:var(--amber)"></span>Neutral / mixed</span>
-      <span><span class="dot" style="background:var(--red)"></span>Negative for India mobility interests</span>
-    </div>
-  </div>
+    <footer>
+      <div><b>Reading the numbers.</b> Net sentiment = share of positive items minus share of negative items, in percentage points (pp). Sentiment is tagged against GATI's thesis — India's workforce as a solution to developed-market shortages — so a stricter US visa rule is negative even when the reporting is neutral. Figures count every item logged, so they can differ slightly from the dashboard if repeated stories are present (use “Hide repeated headlines” to strip them).</div>
+      <div style="margin-top:6px;" id="footNote"></div>
+    </footer>
+  </main>
 
-  <div id="stateMsg" class="state-msg">Loading latest data…</div>
-
-  <nav class="pager" aria-label="More views">
-    <a class="prev" href="./feed.html"><span class="ar">←</span> Daily news feed</a>
-    <a class="next" href="./analysis.html">Further analysis <span class="ar">→</span></a>
-  </nav>
-
-  <footer>
-    <div><b>What "sentiment" means here:</b> each news item is tagged relative to GATI's core thesis — India's labour force as a solution to developed-market demographic shortages — not sentiment about the article's subject in general. A stricter US H-1B rule is "negative" even if it's neutral reporting; a new bilateral mobility pact is "positive."</div>
-    <div style="margin-top:6px;"><b>Source:</b> GATI Daily Mobility &amp; Migration Briefing, produced by a scheduled Claude Cowork task that searches, ranks India-specific &gt; destination-country &gt; competitor-country &gt; demographic news, tags each item 🔴🟡🟢, and posts to Slack. Counts here are those tags, rolled up — a curated top-line read, not a full census of published mobility news.</div>
-    <div class="proto-tag" id="protoTag">Live — updates automatically each weekday morning</div>
-  </footer>
-
+  <aside class="aside" id="filters" aria-label="Filters"></aside>
 </div>
 
+<script src="./assets/gati.js"></script>
 <script>
-const COLORS = { green:'#2f9e6e', yellow:'#f2a93c', red:'#e05353' };
-let DATA = [];
-let LATEST = null;
-let stackChartRef = null;
-let currentRange = '90';
+(function(){
+  const G = window.GATI;
+  const C = { positive:'#2f9e6e', neutral:'#f2a93c', negative:'#e05353' };
+  let F = null, DATA = null, timeChart = null, cSort = 'volume';
+  const $ = id => document.getElementById(id);
+  const pct = (a, n) => n ? Math.round(a / n * 100) : 0;
+  const netCls = v => v > 0.5 ? 'pos' : v < -0.5 ? 'neg' : 'zero';
 
-function fmtDate(d){
-  return new Date(d+'T00:00:00').toLocaleDateString('en-GB',{day:'numeric',month:'short'});
-}
-function fmtDateLong(d){
-  return new Date(d+'T00:00:00').toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});
-}
-
-function filterData(range){
-  if(range === 'all') return DATA;
-  const cutoff = new Date(LATEST);
-  cutoff.setDate(cutoff.getDate() - Number(range) + 1);
-  return DATA.filter(d => new Date(d.date+'T00:00:00') >= cutoff);
-}
-
-function render(range){
-  currentRange = range;
-  const rows = filterData(range);
-  const rangeLabels = {
-    '7':'trailing 7 days', '30':'trailing 30 days', '90':'trailing 90 days',
-    '365':'trailing 1 year', 'all':'full history on file'
-  };
-  document.getElementById('windowLabel').textContent =
-    rows.length ? `${rangeLabels[range]} (${fmtDateLong(rows[0].date)} – ${fmtDateLong(rows[rows.length-1].date)})` : rangeLabels[range];
-
-  if(!rows.length){
-    document.getElementById('totalItemsMeta').textContent = '0 items';
-    document.getElementById('totalDaysMeta').textContent = '0';
-    ['pos','neu','neg'].forEach(k=>{
-      document.getElementById(k+'Pct').textContent='–';
-      document.getElementById(k+'PctBadge').textContent='–';
-      document.getElementById(k+'Count').textContent='0 items';
-    });
-    document.getElementById('mixTrack').innerHTML = '';
-    if(stackChartRef) stackChartRef.destroy();
-    return;
+  /* ---------- helpers ---------- */
+  function byKey(items, fn){
+    const m = new Map();
+    items.forEach(i => new Set(fn(i)).forEach(k => { if(!m.has(k)) m.set(k, []); m.get(k).push(i); }));
+    return m;
+  }
+  function destStats(items, minN){
+    const m = byKey(items, i => i.countries);
+    return [...m.entries()].filter(([k, v]) => !G.NON_DEST.has(k) && v.length >= (minN || 1))
+      .map(([k, v]) => { const t = G.tally(v); return { key: k, t, net: G.net(t), n: v.length }; });
   }
 
-  const totals = rows.reduce((a,d)=>({green:a.green+d.green, yellow:a.yellow+d.yellow, red:a.red+d.red}), {green:0,yellow:0,red:0});
-  const grand = totals.green+totals.yellow+totals.red;
-  const pct = n => grand ? Math.round((n/grand)*1000)/10 : 0;
+  /* ---------- KPIs ---------- */
+  function renderKPIs(items){
+    const t = G.tally(items), base = G.tally(DATA.items), n = t.n;
+    const nt = G.net(t), bn = G.net(base);
+    const countries = new Set(); items.forEach(i => i.countries.forEach(c => { if(!G.NON_DEST.has(c)) countries.add(c); }));
+    const days = new Set(items.map(i => i.date)).size;
+    const filtered = items.length !== DATA.items.length;
+    $('kpis').innerHTML = `
+      <div class="kpi"><div class="l">Items</div><div class="v">${n}</div><div class="s">${filtered ? 'of ' + DATA.items.length + ' on file' : 'logged in total'}</div></div>
+      <div class="kpi"><div class="l">Net sentiment</div><div class="v ${netCls(nt)}">${G.fmtPP(nt)}</div><div class="s">${filtered ? 'vs ' + G.fmtPP(bn) + ' for the full log' : 'positive share minus negative share'}</div></div>
+      <div class="kpi"><div class="l">Sentiment split</div><div class="v" style="font-size:20px;padding-top:6px"><span style="color:${C.positive}">${pct(t.positive, n)}%</span> <span style="color:${C.neutral}">${pct(t.neutral, n)}%</span> <span style="color:${C.negative}">${pct(t.negative, n)}%</span></div>
+        <div class="bar">${G.SENT_ORDER.map(k => t[k] ? `<i style="width:${t[k] / n * 100}%;background:${C[k]}"></i>` : '').join('')}</div></div>
+      <div class="kpi"><div class="l">Coverage</div><div class="v">${countries.size}</div><div class="s">countries &amp; regions · ${days} briefing day${days === 1 ? '' : 's'}</div></div>`;
+  }
 
-  document.getElementById('totalItemsMeta').textContent = grand + ' items';
-  document.getElementById('totalDaysMeta').textContent = rows.length;
+  /* ---------- takeaways ---------- */
+  function renderTakeaways(items){
+    const out = [], t = G.tally(items), n = t.n, all = DATA.items;
+    const nt = G.net(t);
+    out.push(`Across <b>${n}</b> items, net sentiment is <b>${G.fmtPP(nt)}</b> — ${pct(t.positive, n)}% positive, ${pct(t.neutral, n)}% neutral, ${pct(t.negative, n)}% negative` +
+      (items.length !== all.length ? `, compared with ${G.fmtPP(G.net(G.tally(all)))} across the whole log.` : '.'));
 
-  document.getElementById('posPct').textContent = pct(totals.green)+'%';
-  document.getElementById('posPctBadge').textContent = pct(totals.green)+'%';
-  document.getElementById('posCount').textContent = totals.green+' items';
-
-  document.getElementById('neuPct').textContent = pct(totals.yellow)+'%';
-  document.getElementById('neuPctBadge').textContent = pct(totals.yellow)+'%';
-  document.getElementById('neuCount').textContent = totals.yellow+' items';
-
-  document.getElementById('negPct').textContent = pct(totals.red)+'%';
-  document.getElementById('negPctBadge').textContent = pct(totals.red)+'%';
-  document.getElementById('negCount').textContent = totals.red+' items';
-
-  const track = document.getElementById('mixTrack');
-  track.innerHTML = '';
-  [['green',totals.green],['yellow',totals.yellow],['red',totals.red]].forEach(([k,v])=>{
-    if(!v) return;
-    const seg = document.createElement('div');
-    seg.className='bar-seg';
-    seg.style.width = (v/grand*100)+'%';
-    seg.style.background = COLORS[k];
-    seg.title = k+': '+v;
-    track.appendChild(seg);
-  });
-
-  if(stackChartRef) stackChartRef.destroy();
-  stackChartRef = new Chart(document.getElementById('stackChart'), {
-    type:'bar',
-    data:{
-      labels: rows.map(d=>fmtDate(d.date)),
-      datasets:[
-        {label:'Positive', data:rows.map(d=>d.green), backgroundColor:COLORS.green, stack:'s'},
-        {label:'Neutral', data:rows.map(d=>d.yellow), backgroundColor:COLORS.yellow, stack:'s'},
-        {label:'Negative', data:rows.map(d=>d.red), backgroundColor:COLORS.red, stack:'s'}
-      ]
-    },
-    options:{
-      responsive:true,
-      plugins:{ legend:{display:false}, tooltip:{mode:'index', intersect:false} },
-      scales:{
-        x:{ stacked:true, grid:{display:false}, ticks:{maxRotation:60, minRotation:60, font:{size:10}, color:'#5f7574', autoSkip:true, maxTicksLimit:24} },
-        y:{ stacked:true, grid:{color:'#eef4f3'}, ticks:{precision:0, color:'#5f7574'} }
-      }
+    const cs = destStats(items, 5);
+    if(cs.length >= 2){
+      const worst = [...cs].sort((a, b) => a.net - b.net)[0], best = [...cs].sort((a, b) => b.net - a.net)[0];
+      if(worst.key !== best.key) out.push(`Among countries with at least 5 items, <b>${G.esc(worst.key)}</b> is the most negative (${G.fmtPP(worst.net)} over ${worst.n} items) and <b>${G.esc(best.key)}</b> the most positive (${G.fmtPP(best.net)} over ${best.n}).`);
     }
-  });
-}
+    const cv = destStats(items).sort((a, b) => b.n - a.n)[0];
+    if(cv && items.length >= 10) out.push(`<b>${G.esc(cv.key)}</b> is the most-covered country, appearing in ${cv.n} items (${pct(cv.n, n)}% of the selection).`);
 
-document.getElementById('rangeToggle').addEventListener('click', (e)=>{
-  if(e.target.tagName !== 'BUTTON') return;
-  document.querySelectorAll('#rangeToggle button').forEach(b=>b.classList.remove('active'));
-  e.target.classList.add('active');
-  render(e.target.dataset.range);
-});
+    const th = [...byKey(items, i => [i.theme]).entries()].filter(([k, v]) => v.length >= 5).map(([k, v]) => ({ k, n: v.length, net: G.net(G.tally(v)) }));
+    if(th.length >= 2){
+      const w = [...th].sort((a, b) => a.net - b.net)[0], b = [...th].sort((a, b) => b.net - a.net)[0];
+      if(w.k !== b.k) out.push(`By theme, <b>${G.esc(w.k)}</b> carries the most negative news flow (${G.fmtPP(w.net)}, ${w.n} items) while <b>${G.esc(b.k)}</b> is the most favourable (${G.fmtPP(b.net)}, ${b.n} items).`);
+    }
+    const ind = items.filter(i => i.buckets.includes('India Specific'));
+    if(ind.length >= 5 && ind.length < n) out.push(`<b>${pct(ind.length, n)}%</b> of the selection names India directly; those items net <b>${G.fmtPP(G.net(G.tally(ind)))}</b>, against ${G.fmtPP(G.net(G.tally(items.filter(i => !i.buckets.includes('India Specific')))))} for the rest.`);
 
-// ---- load live data ----
-fetch('./data/daily_summary.json')
-  .then(r => { if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); })
-  .then(json => {
-    if(!Array.isArray(json) || json.length === 0){
-      document.getElementById('stateMsg').textContent = 'No data yet — the tracker will populate after the first scheduled run.';
+    const wk = [...byKey(items, i => [G.weekStart(i.date)]).entries()].filter(([k, v]) => v.length >= 5).map(([k, v]) => ({ k, n: v.length, net: G.net(G.tally(v)) }));
+    if(wk.length >= 3){
+      const w = [...wk].sort((a, b) => a.net - b.net)[0];
+      out.push(`The weakest week was <b>${G.fmtDate(w.k)}</b> (${G.fmtPP(w.net)} over ${w.n} items).`);
+    }
+    $('takeaways').innerHTML = out.map(s => `<li>${s}</li>`).join('');
+  }
+
+  /* ---------- weekly time chart ---------- */
+  function renderTime(items){
+    const first = G.weekStart(items[items.length - 1].date), last = G.weekStart(items[0].date);
+    const weeks = []; for(let w = first; w <= last; w = G.addDays(w, 7)) weeks.push(w);
+    const m = byKey(items, i => [G.weekStart(i.date)]);
+    const tal = weeks.map(w => G.tally(m.get(w) || []));
+    const cfg = {
+      type: 'bar',
+      data: {
+        labels: weeks.map(w => G.fmtDate(w)),
+        datasets: [
+          { type:'bar', label:'Positive', data:tal.map(t => t.positive), backgroundColor:C.positive, stack:'s', yAxisID:'y', order:2 },
+          { type:'bar', label:'Neutral',  data:tal.map(t => t.neutral),  backgroundColor:C.neutral,  stack:'s', yAxisID:'y', order:2 },
+          { type:'bar', label:'Negative', data:tal.map(t => t.negative), backgroundColor:C.negative, stack:'s', yAxisID:'y', order:2 },
+          { type:'line', label:'Net sentiment (pp)', data:tal.map(t => t.n ? Math.round(G.net(t) * 10) / 10 : null), yAxisID:'y2', order:1,
+            borderColor:'#0a4f4e', backgroundColor:'#0a4f4e', borderWidth:2, tension:.25, spanGaps:false,
+            pointRadius: ctx => { const t = tal[ctx.dataIndex]; return t ? 2.5 + Math.min(6, Math.sqrt(t.n) * .9) : 0; }, pointHoverRadius:8 }
+        ]
+      },
+      options: {
+        responsive:true, maintainAspectRatio:false, interaction:{ mode:'index', intersect:false },
+        plugins:{ legend:{ display:false }, tooltip:{ callbacks:{
+          title: items => 'Week of ' + G.fmtDate(weeks[items[0].dataIndex]),
+          footer: items => { const t = tal[items[0].dataIndex]; return t.n ? t.n + ' items' : 'no briefings on file'; } } } },
+        scales:{
+          x:{ stacked:true, grid:{ display:false }, ticks:{ font:{ size:10 }, color:'#5f7574', maxRotation:60, minRotation:0, autoSkip:true, maxTicksLimit:26 } },
+          y:{ stacked:true, beginAtZero:true, grid:{ color:'#eef4f3' }, ticks:{ precision:0, color:'#5f7574' }, title:{ display:true, text:'items', color:'#5f7574', font:{ size:11 } } },
+          y2:{ position:'right', min:-100, max:100, grid:{ drawOnChartArea:true, drawTicks:false, color: c => c.tick && c.tick.value === 0 ? 'rgba(10,79,78,.28)' : 'transparent' }, ticks:{ color:'#0a4f4e', callback:v => (v > 0 ? '+' : v < 0 ? '−' : '') + Math.abs(v), stepSize:50 }, title:{ display:true, text:'net sentiment (pp)', color:'#0a4f4e', font:{ size:11 } } }
+        }
+      }
+    };
+    if(timeChart) timeChart.destroy();
+    timeChart = new Chart($('timeChart'), cfg);
+  }
+
+  /* ---------- diverging country bars ---------- */
+  function renderCountries(items){
+    let rows = destStats(items).sort((a, b) => b.n - a.n).slice(0, 12);
+    if(cSort === 'net') rows = rows.filter(r => r.n >= 3).sort((a, b) => b.net - a.net);
+    if(!rows.length){ $('countryBars').innerHTML = '<div class="f-empty">No country-level items in this selection.</div>'; return; }
+    const max = Math.max(...rows.map(r => Math.max(r.t.positive, r.t.negative)), 1);
+    const sel = F.state.country;
+    $('countryBars').innerHTML = `<div class="dv-axis"><div></div><div><span>← negative</span><span>positive →</span></div><div style="text-align:right">net</div></div>` +
+      rows.map(r => `<div class="dv-row${sel.has(r.key) ? ' sel' : ''}" data-f="country" data-v="${G.esc(r.key)}" title="${G.esc(r.key)}: ${r.t.positive} positive · ${r.t.neutral} neutral · ${r.t.negative} negative">
+        <div class="dv-name">${G.esc(r.key)}<small>${r.n}</small></div>
+        <div class="dv-bar"><div class="l"><i style="width:${r.t.negative / max * 100}%"></i></div><div class="r"><i style="width:${r.t.positive / max * 100}%"></i></div></div>
+        <div class="dv-net ${netCls(r.net)}">${G.fmtPP(r.net).replace(' pp', '')}</div></div>`).join('') +
+      (cSort === 'net' ? '<div class="f-empty" style="margin-top:8px">Countries with 3+ items, best to worst net sentiment.</div>' : '<div class="f-empty" style="margin-top:8px">Top 12 countries by items; small figure = item count.</div>');
+  }
+
+  /* ---------- stacked share rows (theme, bucket) ---------- */
+  function stackRows(container, groups, facet, labelFn){
+    const sel = F.state[facet];
+    container.innerHTML = groups.map(g => {
+      const t = g.t, n = t.n;
+      return `<div class="st-row${sel.has(g.key) ? ' sel' : ''}" data-f="${facet}" data-v="${G.esc(g.key)}" title="${G.esc(g.key)}: ${t.positive} positive · ${t.neutral} neutral · ${t.negative} negative">
+        <div class="st-name">${G.esc(labelFn ? labelFn(g.key) : g.key)}</div>
+        <div class="st-bar">${G.SENT_ORDER.map(k => t[k] ? `<i style="width:${t[k] / n * 100}%;background:${C[k]}">${t[k] / n >= .12 ? t[k] : ''}</i>` : '').join('')}</div>
+        <div class="st-n">${n}</div></div>`;
+    }).join('') || '<div class="f-empty">Nothing to show.</div>';
+  }
+  function renderThemes(items){
+    const m = byKey(items, i => [i.theme]);
+    const rows = [...m.entries()].map(([k, v]) => ({ key: k, t: G.tally(v) })).sort((a, b) => b.t.n - a.t.n);
+    stackRows($('themeBars'), rows, 'theme');
+  }
+  function renderBuckets(items){
+    const m = byKey(items, i => i.buckets.length ? i.buckets : ['Unclassified']);
+    const rows = [...m.entries()].map(([k, v]) => ({ key: k, t: G.tally(v) })).sort((a, b) => b.t.n - a.t.n);
+    stackRows($('bucketBars'), rows, 'bucket');
+  }
+  function renderSources(items){
+    const m = byKey(items, i => [i.source]);
+    const rows = [...m.entries()].map(([k, v]) => ({ key: k, t: G.tally(v), ex: v.some(i => i.excluded) })).sort((a, b) => b.t.n - a.t.n).slice(0, 10);
+    const max = Math.max(...rows.map(r => r.t.n), 1), sel = F.state.source;
+    $('sourceBars').innerHTML = rows.map(r => `<div class="st-row src${sel.has(r.key) ? ' sel' : ''}" data-f="source" data-v="${G.esc(r.key)}" title="${G.esc(r.key)}: ${r.t.positive} positive · ${r.t.neutral} neutral · ${r.t.negative} negative${r.ex ? ' — on exclude list' : ''}">
+      <div class="st-name">${G.esc(r.key)}${r.ex ? '<span class="flag">✕</span>' : ''}</div>
+      <div class="st-bar">${G.SENT_ORDER.map(k => r.t[k] ? `<i style="width:${r.t[k] / max * 100}%;background:${C[k]}"></i>` : '').join('')}</div>
+      <div class="st-n">${r.t.n}</div></div>`).join('') || '<div class="f-empty">Nothing to show.</div>';
+  }
+
+  /* ---------- heatmap ---------- */
+  function heatColor(net, n){
+    if(!n) return '';
+    const conf = .35 + .65 * Math.min(1, n / 5), k = Math.min(1, Math.abs(net) / 100) * conf;
+    if(Math.abs(net) < 1) return `background:rgba(95,117,116,.12);color:#3d5153`;
+    const rgb = net > 0 ? '47,158,110' : '224,83,83';
+    return `background:rgba(${rgb},${(.14 + .74 * k).toFixed(2)});color:${k > .55 ? '#fff' : '#17272a'}`;
+  }
+  function renderHeatmap(items){
+    const countries = destStats(items).sort((a, b) => b.n - a.n).slice(0, 12).map(r => r.key);
+    const themeSet = new Set(items.map(i => i.theme));
+    const themes = G.THEMES.map(t => t.name).filter(t => themeSet.has(t));
+    if(themeSet.has('Untagged')) themes.push('Untagged');
+    if(!countries.length){ $('heatmap').innerHTML = '<div class="f-empty">No country-level items in this selection.</div>'; return; }
+    const cell = new Map();
+    items.forEach(i => new Set(i.countries).forEach(c => { const k = c + '||' + i.theme; if(!cell.has(k)) cell.set(k, []); cell.get(k).push(i); }));
+    let h = '<table class="hm"><thead><tr><th class="rh"></th>' + themes.map(t => `<th title="${G.esc(t)}">${G.esc(G.THEME_SHORT[t] || t)}</th>`).join('') + '</tr></thead><tbody>';
+    countries.forEach(c => {
+      h += `<tr><th class="rh">${G.esc(c)}</th>`;
+      themes.forEach(t => {
+        const v = cell.get(c + '||' + t);
+        if(!v) { h += '<td class="e">·</td>'; return; }
+        const tt = G.tally(v), nt = G.net(tt);
+        h += `<td data-c="${G.esc(c)}" data-t="${G.esc(t)}" style="${heatColor(nt, tt.n)}" title="${G.esc(c)} · ${G.esc(t)}: ${tt.n} items (${tt.positive} positive, ${tt.neutral} neutral, ${tt.negative} negative) — net ${G.fmtPP(nt)}">${tt.n}</td>`;
+      });
+      h += '</tr>';
+    });
+    $('heatmap').innerHTML = h + '</tbody></table>';
+  }
+
+  /* ---------- orchestrate ---------- */
+  function render(){
+    const items = F.filtered();
+    G.renderChips($('chips'), F);
+    if(!items.length){
+      $('content').style.display = 'none';
+      $('stateMsg').style.display = ''; $('stateMsg').classList.remove('error');
+      $('stateMsg').innerHTML = '<div class="empty" style="margin-top:22px">No items match these filters. Remove a chip above or hit <b>Reset all</b>.</div>';
       return;
     }
-    DATA = json.sort((a,b)=> a.date.localeCompare(b.date));
-    LATEST = new Date(DATA[DATA.length-1].date+'T00:00:00');
-    document.getElementById('lastUpdated').textContent = fmtDateLong(DATA[DATA.length-1].date);
-    document.getElementById('stateMsg').style.display = 'none';
-    render(currentRange);
-  })
-  .catch(err => {
-    const el = document.getElementById('stateMsg');
-    el.textContent = 'Could not load live data (data/daily_summary.json) — check the file exists and the page is served over http(s), not opened as a local file.';
-    el.classList.add('error');
-    console.error(err);
-  });
-</script>
+    $('stateMsg').style.display = 'none'; $('content').style.display = '';
+    renderKPIs(items); renderTakeaways(items); renderTime(items);
+    renderCountries(items); renderThemes(items); renderHeatmap(items);
+    renderBuckets(items); renderSources(items);
+  }
 
+  // drill-down clicks
+  $('content').addEventListener('click', e => {
+    const td = e.target.closest('td[data-c]');
+    if(td){ F.setOnly({ country: td.dataset.c, theme: td.dataset.t }); return; }
+    const row = e.target.closest('[data-f]'); if(!row) return;
+    F.toggle(row.dataset.f, row.dataset.v);
+  });
+  $('cSort').addEventListener('click', e => {
+    const s = e.target.dataset && e.target.dataset.s; if(!s) return;
+    cSort = s; document.querySelectorAll('#cSort button').forEach(b => b.classList.toggle('active', b.dataset.s === s));
+    if(F) renderCountries(F.filtered());
+  });
+  $('filtersToggle').addEventListener('click', () => {
+    const a = $('filters'); a.classList.toggle('open');
+    $('filtersToggle').textContent = a.classList.contains('open') ? 'Hide filters' : 'Show filters';
+  });
+
+  GATI.loadItems().then(data => {
+    DATA = data;
+    if(!data.items.length){ $('stateMsg').textContent = 'No data yet — the analysis will populate after the first scheduled run.'; return; }
+    $('footNote').innerHTML = `<b>Source:</b> data/items.csv — ${data.items.length} items, ${G.fmtDateYear(data.items[data.items.length - 1].date)} to ${G.fmtDateYear(data.latest)}.` +
+      (data.ignored ? ` ${data.ignored} placeholder row${data.ignored === 1 ? '' : 's'} (e.g. “quiet news day”) ignored.` : '');
+    F = G.createFilters({ items: data.items, latest: data.latest, mount: $('filters'), onChange: render });
+    F.changed();
+  }).catch(err => {
+    const el = $('stateMsg');
+    el.textContent = 'Could not load data/items.csv — check the file exists and the page is served over http(s), not opened as a local file.';
+    el.classList.add('error'); console.error(err);
+  });
+})();
+</script>
 </body>
 </html>
