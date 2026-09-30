@@ -250,7 +250,7 @@ window.GATI = (function () {
         <div class="seg" id="f-range"><button type="button" data-r="7">7D</button><button type="button" data-r="30">30D</button><button type="button" data-r="90">90D</button><button type="button" data-r="all">All</button></div>
         <div class="f-dates"><label>From<input type="date" id="f-from"></label><label>To<input type="date" id="f-to"></label></div>
       </div>
-      <div class="f-sec"><h4>Sentiment</h4><div id="f-sent"></div></div>
+      <div class="f-sec"><h4>Type of development</h4><div id="f-sent"></div></div>
       <div class="f-sec"><h4>Theme</h4><div id="f-theme"></div></div>
       <div class="f-sec"><h4>Focus <span class="hint" title="The four buckets from the daily prompt, plus Global &amp; Multilateral">ⓘ</span></h4><div id="f-bucket"></div></div>
       <div class="f-sec"><h4>Country <span class="hint" title="'India' = India-only developments. India-linked stories abroad sit under the other country plus the India Specific focus.">ⓘ</span></h4>
