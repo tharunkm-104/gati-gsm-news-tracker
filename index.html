@@ -4,12 +4,7 @@
 <meta charset="UTF-8">
 <title>GATI — GSM News Tracker</title>
 
-<!-- Open Graph / Slack unfurl preview.
-     Replace the og:url and og:image domain below with your actual GitHub
-     Pages URL once you confirm it (looks like https://<user>.github.io/<repo>/).
-     og:image points at QuickChart, which renders the config in the URL into
-     a PNG on the fly — no image file to host. The counts baked into it here
-     are a snapshot; see the note in daily-update.yml about keeping it fresh. -->
+<!-- Open Graph / Slack unfurl preview -->
 <meta property="og:type" content="website">
 <meta property="og:title" content="GATI — GSM News Tracker">
 <meta property="og:description" content="Live daily read on how global mobility & migration news is tilting for India's labour-export ambitions — tracked from curated briefings, updated weekday mornings.">
@@ -153,9 +148,28 @@
     h1{font-size:26px;}
     .range-row{flex-direction:column; align-items:flex-start;}
   }
+
+  /* Topbar navigation matching feed.html and analysis.html */
+  .topbar{background:#fff; border-bottom:1px solid var(--line); position:sticky; top:0; z-index:20;}
+  .topbar-in{max-width:1080px; margin:0 auto; padding:10px 24px; display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;}
+  .brand{display:inline-flex; align-items:center; gap:8px; font-weight:800; font-size:13.5px; color:var(--teal-dark); text-decoration:none; letter-spacing:.01em;}
+  .brand::before{content:""; width:8px; height:8px; border-radius:50%; background:var(--gold);}
+  .tabs{display:flex; gap:6px; background:var(--teal-light); padding:4px; border-radius:10px;}
+  .tabs a{padding:6px 14px; border-radius:7px; font-size:12.5px; font-weight:700; color:var(--teal-dark); text-decoration:none; white-space:nowrap;}
+  .tabs a.active{background:var(--teal); color:#fff;}
+  .tabs a:not(.active):hover{background:#d6e9e7;}
 </style>
 </head>
 <body>
+<div class="topbar"><div class="topbar-in">
+  <a class="brand" href="./index.html">GATI · GSM News Tracker</a>
+  <nav class="tabs">
+    <a href="./index.html" class="active" data-carry="./index.html">Dashboard</a>
+    <a href="./feed.html" data-carry="./feed.html">Daily feed</a>
+    <a href="./analysis.html" data-carry="./analysis.html">Analysis</a>
+  </nav>
+</div></div>
+
 <div class="wrap">
 
   <div class="eyebrow">GATI Resource Center · Live Tracker</div>
@@ -205,7 +219,7 @@
   </div>
 
   <div class="card">
-    <h2>Sentiment mix, selected window</h2>
+    <h2>Development mix, selected window</h2>
     <p class="desc">Every item tagged across briefings in the selected window, combined into one bar.</p>
     <div class="mix-row">
       <div class="mix-bar">
@@ -216,7 +230,7 @@
   </div>
 
   <div class="card">
-    <h2>Daily item volume by sentiment</h2>
+    <h2>Daily item volume by types of development</h2>
     <p class="desc">Each bar is one Daily Briefing; height is the number of items tagged that day, split by colour. Gaps are days without a briefing on file.</p>
     <div class="chart-box"><canvas id="stackChart" height="90"></canvas></div>
     <div class="legend-row">
@@ -234,7 +248,7 @@
   </nav>
 
   <footer>
-    <div><b>What "sentiment" means here:</b> each news item is tagged relative to GATI's core thesis — India's labour force as a solution to developed-market demographic shortages — not sentiment about the article's subject in general. A stricter US H-1B rule is "negative" even if it's neutral reporting; a new bilateral mobility pact is "positive."</div>
+    <div><b>What "developments" mean here:</b> each news item is tagged relative to GATI's core thesis — India's labour force as a solution to developed-market demographic shortages — not the tone of the article in general. A stricter US H-1B rule is "negative" even if it's neutral reporting; a new bilateral mobility pact is "positive."</div>
     <div style="margin-top:6px;"><b>Source:</b> GATI Daily Mobility &amp; Migration Briefing, produced by a scheduled Claude Cowork task that searches, ranks India-specific &gt; destination-country &gt; competitor-country &gt; demographic news, tags each item 🔴🟡🟢, and posts to Slack. Counts here are those tags, rolled up — a curated top-line read, not a full census of published mobility news.</div>
     <div class="proto-tag" id="protoTag">Live — updates automatically each weekday morning</div>
   </footer>
