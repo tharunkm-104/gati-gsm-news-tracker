@@ -1,8 +1,8 @@
 {
-  "name": "gati-mobility-sentiment-tracker-slack-embed",
+  "name": "gsm-news-tracker-slack-embed",
   "private": true,
   "type": "module",
-  "description": "Slack Work Objects embed backend for the GATI Mobility Sentiment Tracker (additive; the static site is unchanged).",
+  "description": "Slack Work Objects embed backend for the GSM News Tracker (additive; the static site is unchanged).",
   "engines": { "node": ">=20" },
   "scripts": {
     "test": "node --test test/*.test.js"
