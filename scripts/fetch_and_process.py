@@ -73,6 +73,36 @@ def categories_look_valid(raw):
     return all(tok.strip() in KNOWN_BUCKETS for tok in raw.split("|"))
 
 
+NON_URL_FIELDS = ("headline", "categories", "summary", "vibe", "in_top7", "source", "theme", "countries")
+
+
+def row_is_structurally_sane(row):
+    """Catches a worse variant of the same Slack/Cowork corruption than
+    clean_url() can: sometimes the url cell itself parses perfectly
+    clean, but an entire extra garbage field gets inserted right after
+    it — so every field from categories onward silently shifts one
+    column left. A shifted vibe/theme/source can still look like a
+    plausible word (that's exactly how a real 'positive' item quietly
+    became 'neutral' before), so per-field validity checks alone won't
+    catch it. Two structural signals do, reliably:
+      - in_top7 must be exactly 'true' or 'false' (case-insensitive) —
+        a shifted row ends up with something like 'negative' or a
+        source name there instead, which can never happen legitimately.
+      - none of the non-url fields should ever contain a bare URL —
+        a shifted row ends up with the duplicated/garbled link text
+        sitting in categories or summary instead of in url.
+    Returns (True, "") if the row looks structurally sound, else
+    (False, reason) for logging.
+    """
+    top7 = (row.get("in_top7") or "").strip().lower()
+    if top7 not in ("true", "false"):
+        return False, f"in_top7={row.get('in_top7')!r} is not true/false"
+    for field in NON_URL_FIELDS:
+        if "http" in (row.get(field) or "").lower():
+            return False, f"{field} unexpectedly contains a URL fragment"
+    return True, ""
+
+
 # Slack's mrkdwn has no concept of a fenced-code "language" tag (unlike GitHub
 # Markdown), so a message posted as ```csv ... ``` and one posted as ``` ... ```
 # are indistinguishable once they hit the API — Cowork may or may not include
@@ -142,6 +172,28 @@ def save_items_csv(path, rows):
 def main():
     items = load_items_csv("data/items.csv")
 
+    # Drop any row already on file that fails the structural sanity check
+    # (see row_is_structurally_sane docstring) — these are rows where an
+    # earlier run ingested a column-shifted message, so several of a row's
+    # fields are actually silently holding the NEXT field's value. There's
+    # no reliable way to un-shift a row after the fact (the true summary
+    # text is usually gone entirely, not just misplaced), so the safest
+    # move is to drop it and log it rather than let it keep skewing every
+    # chart on the site. Do this BEFORE building seen_urls, so a corrected
+    # repost of the same URL on a later run isn't blocked by the dedup set.
+    sane_items, dropped = [], []
+    for row in items:
+        ok, reason = row_is_structurally_sane(row)
+        if ok:
+            sane_items.append(row)
+        else:
+            dropped.append((row.get("date"), row.get("headline", "")[:70], reason))
+    if dropped:
+        print(f"Dropped {len(dropped)} already-stored row(s) that look column-shifted:")
+        for d, h, reason in dropped:
+            print(f"  - {d} {h!r} ({reason})")
+    items = sane_items
+
     # Clean up any row already on file whose vibe didn't survive the old
     # exact-match check cleanly (see normalize_vibe docstring) — items.csv
     # is read directly by feed.html/analysis.html, so this keeps the file
@@ -175,6 +227,12 @@ def main():
                     continue  # dedup — safe to re-run this script any time
                 clean = {k: (row.get(k) or "").strip() for k in FIELDNAMES}
                 clean["url"] = url
+                sane, reason = row_is_structurally_sane(clean)
+                if not sane:
+                    print(f"WARNING: row for {clean['date']} {clean['headline'][:70]!r} "
+                          f"looks column-shifted ({reason}) — skipped rather than ingested "
+                          f"wrong. Check #mobility-news-dump and add this item manually if genuine.")
+                    continue
                 if not categories_look_valid(clean["categories"]):
                     print(f"WARNING: unrecognised categories {clean['categories']!r} on "
                           f"{clean['date']} {clean['headline'][:70]!r} — kept as-is, but this "
