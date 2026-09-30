@@ -15,7 +15,7 @@ GATI Foundation's internal tracker for daily labour-mobility and migration news.
 `data/items.csv` (rebuilt daily by the GitHub Action) columns:
 `date, headline, url, categories, summary, vibe, in_top7, source, theme, countries`
 
-- `vibe` — `positive` / `neutral` / `negative`, judged against GATI's thesis (India's workforce as a solution to developed-market labour shortages), not the article's own tone
+- `tracks` — `positive developments` / `neutral developments` / `negative developments`, judged against GATI's thesis (India's workforce as a solution to developed-market labour shortages), not the article's own tone
 - `categories` — briefing bucket(s), pipe-separated: India Specific / Destination Countries / Competitor Countries / Demographics & Fertility / Global & Multilateral
 - `theme` — one of: Visas and Work Permits, Skills and Talent, Labour and Workers, Students and Education, Bilateral Deals and Trade, Enforcement and Crisis, Remittances and Diaspora, Demographics and Workforce, Other
 - `countries` — pipe-separated; `India` only for India-only developments; `Global` when none applies
