@@ -1,0 +1,13 @@
+{
+  "name": "gati-mobility-sentiment-tracker-slack-embed",
+  "private": true,
+  "type": "module",
+  "description": "Slack Work Objects embed backend for the GATI Mobility Sentiment Tracker (additive; the static site is unchanged).",
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "test": "node --test test/*.test.js"
+  },
+  "dependencies": {
+    "@slack/web-api": "^8.1.1"
+  }
+}

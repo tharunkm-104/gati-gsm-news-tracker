@@ -1,0 +1,36 @@
+# GATI Tracker Embed — Slack app manifest (first-party, single workspace, NOT distributed)
+#
+# Order matters (see SLACK_EMBED_SETUP.md):
+#   1. Create the app from this manifest as-is (Request URL deliberately left out).
+#   2. Copy the Signing Secret into Vercel and deploy the function.
+#   3. THEN add the Request URL under Event Subscriptions (Slack verifies it live).
+#   4. Install the app and copy the Bot Token into Vercel.
+display_information:
+  name: GATI Tracker Embed
+  description: Opens the live GATI Mobility Sentiment Tracker inside Slack when its link is shared.
+  background_color: "#0a4f4e"
+features:
+  bot_user:
+    display_name: GATI Tracker
+    always_online: false
+  unfurl_domains:
+    - gati-mobility-sentiment-tracker.vercel.app
+    - tharunkm-104.github.io
+  rich_previews:            # = "Work Object Previews" in app settings
+    is_active: true
+    entity_types:
+      - slack#/entities/item
+oauth_config:
+  scopes:
+    bot:
+      - links:read          # receive link_shared
+      - links:write         # chat.unfurl
+settings:
+  event_subscriptions:
+    # request_url: https://gati-mobility-sentiment-tracker.vercel.app/api/slack/events   <- add in step 3
+    bot_events:
+      - link_shared
+      - entity_details_requested
+  org_deploy_enabled: false
+  socket_mode_enabled: false
+  token_rotation_enabled: false
