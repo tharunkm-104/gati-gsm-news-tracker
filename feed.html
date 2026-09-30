@@ -11,7 +11,7 @@
 <div class="topbar"><div class="topbar-in">
   <a class="brand" href="./index.html">GATI · GSM News Tracker</a>
   <nav class="tabs">
-    <a href="./index.html">Dashboard</a>
+    <a href="./index.html" data-carry="./index.html">Dashboard</a>
     <a href="./feed.html" class="active" data-carry="./feed.html">Daily feed</a>
     <a href="./analysis.html" data-carry="./analysis.html">Analysis</a>
   </nav>
@@ -41,7 +41,7 @@
     <div id="feed"></div>
 
     <footer>
-      <div><b>How to read the tags.</b> <b>Sentiment</b> is judged against GATI's thesis — India's workforce as a solution to developed-market shortages — not the tone of the article. <b>Theme</b> is the item's main topic; <b>Focus</b> is the briefing bucket it was filed under; <b>Country</b> lists the countries the development concerns (“India” alone means an India-only development). When grouped by country, an item covering several countries appears under each.</div>
+      <div><b>How to read the tags.</b> <b>Type of development</b> is judged against GATI's thesis — India's workforce as a solution to developed-market shortages — not the tone of the article. <b>Theme</b> is the item's main topic; <b>Focus</b> is the briefing bucket it was filed under; <b>Country</b> lists the countries the development concerns (“India” alone means an India-only development). When grouped by country, an item covering several countries appears under each.</div>
       <div style="margin-top:6px;" id="footNote"></div>
     </footer>
   </main>
@@ -148,6 +148,10 @@
     F = G.createFilters({ items: data.items, latest: data.latest, mount: document.getElementById('filters'),
       extraUrl: () => group !== 'date' ? { group } : null, onChange: render });
     syncGroup(); F.changed();
+    const sentH4 = document.querySelector('#filters h4');
+    if (sentH4 && sentH4.textContent.trim() === 'Sentiment') {
+      sentH4.textContent = 'Development type';
+    }
   }).catch(err => {
     const el = document.getElementById('stateMsg');
     el.textContent = 'Could not load data/items.csv — check the file exists and the page is served over http(s), not opened as a local file.';
