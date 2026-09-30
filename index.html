@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>GATI — GSM News Tracker</title>
+
+<!-- Open Graph / Slack unfurl preview.
+     Replace the og:url and og:image domain below with your actual GitHub
+     Pages URL once you confirm it (looks like https://<user>.github.io/<repo>/).
+     og:image points at QuickChart, which renders the config in the URL into
+     a PNG on the fly — no image file to host. The counts baked into it here
+     are a snapshot; see the note in daily-update.yml about keeping it fresh. -->
+<meta property="og:type" content="website">
+<meta property="og:title" content="GATI — GSM News Tracker">
+<meta property="og:description" content="Live daily read on how global mobility & migration news is tilting for India's labour-export ambitions — tracked from curated briefings, updated weekday mornings.">
+<meta property="og:url" content="https://tharunkm-104.github.io/gati-mobility-sentiment-tracker/">
+<meta property="og:image" content="https://quickchart.io/chart?width=1200&height=630&backgroundColor=white&c={type:'doughnut',data:{labels:['Positive','Neutral','Negative'],datasets:[{data:[95,71,94],backgroundColor:['%232f9e6e','%23f2a93c','%23e05353']}]},options:{plugins:{legend:{position:'bottom',labels:{font:{size:22}}},title:{display:true,text:'GSM News Tracker',font:{size:28}}}}}">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  :root{
+    --teal-dark:#0a4f4e;
+    --teal:#0b6b68;
+    --teal-light:#e8f3f2;
+    --gold:#f2a93c;
+    --gold-dark:#d98f1c;
+    --red:#e05353;
+    --green:#2f9e6e;
+    --amber:#f2a93c;
+    --ink:#17272a;
+    --muted:#5f7574;
+    --line:#dfe9e8;
+    --card:#ffffff;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; padding:0;
+    font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+    background:#fbfdfd;
+    color:var(--ink);
+  }
+  .wrap{max-width:1080px;margin:0 auto;padding:36px 24px 56px;}
+
+  .eyebrow{
+    display:inline-flex;align-items:center;gap:8px;
+    color:var(--gold-dark); font-weight:700; font-size:12.5px;
+    letter-spacing:.09em; text-transform:uppercase;
+  }
+  .eyebrow::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--gold);}
+  h1{
+    margin:10px 0 8px; font-size:32px; line-height:1.15; color:var(--teal-dark); font-weight:800;
+    letter-spacing:-0.01em;
+  }
+  .sub{
+    color:var(--muted); font-size:15.5px; line-height:1.6; max-width:760px; margin:0 0 4px;
+  }
+  .meta-line{
+    margin-top:14px; padding-top:14px; border-top:1px solid var(--line);
+    display:flex; flex-wrap:wrap; gap:18px; font-size:12.5px; color:var(--muted);
+  }
+  .meta-line b{color:var(--ink);}
+  .dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px;position:relative;top:-1px;}
+
+  .range-row{
+    display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px;
+    margin-top:28px;
+  }
+  .range-label{font-size:12.5px; color:var(--muted); font-weight:600;}
+  .range-toggle{display:flex; gap:6px; background:var(--teal-light); padding:4px; border-radius:10px;}
+  .range-toggle button{
+    border:none; background:transparent; padding:6px 13px; border-radius:7px;
+    font-size:12.5px; font-weight:700; color:var(--teal-dark); cursor:pointer;
+    font-family:inherit;
+  }
+  .range-toggle button.active{background:var(--teal); color:#fff;}
+
+  .stats{
+    display:grid; grid-template-columns:repeat(3,1fr); gap:20px; margin:18px 0 8px;
+  }
+  .stat{
+    background:var(--card); border-radius:14px; padding:26px 18px 22px; text-align:center;
+    border:1px solid var(--line); position:relative;
+  }
+  .stat .badge{
+    width:52px;height:52px;border-radius:50%;
+    display:flex;align-items:center;justify-content:center;
+    margin:-46px auto 12px; font-weight:800; font-size:15px; color:#fff;
+    box-shadow:0 4px 10px rgba(0,0,0,.12);
+  }
+  .stat.pos .badge{background:var(--green);}
+  .stat.neu .badge{background:var(--amber);}
+  .stat.neg .badge{background:var(--red);}
+  .stat .pct{font-size:30px;font-weight:800;color:var(--teal-dark);}
+  .stat .label{font-size:13px;font-weight:700;color:var(--ink);margin-top:2px;}
+  .stat .count{font-size:12px;color:var(--muted);margin-top:4px;}
+
+  .card{
+    background:var(--card); border:1px solid var(--line); border-radius:14px;
+    padding:24px 24px 18px; margin-top:22px;
+  }
+  .card h2{
+    font-size:15px; color:var(--teal-dark); margin:0 0 3px; font-weight:800;
+  }
+  .card p.desc{margin:0 0 16px; font-size:13px; color:var(--muted); line-height:1.55; max-width:680px;}
+  .chart-box{position:relative;}
+  .legend-row{display:flex; gap:18px; font-size:12px; color:var(--muted); margin-top:10px; flex-wrap:wrap;}
+  .legend-row span{display:flex;align-items:center;gap:6px;}
+
+  .mix-row{display:flex; gap:26px; align-items:center; flex-wrap:wrap;}
+  .mix-bar{flex:1; min-width:260px;}
+  .bar-track{
+    display:flex; height:22px; border-radius:11px; overflow:hidden; border:1px solid var(--line);
+    background:var(--teal-light);
+  }
+  .bar-seg{height:100%;}
+  .bar-labels{display:flex; justify-content:space-between; font-size:11.5px; color:var(--muted); margin-top:8px;}
+
+  .state-msg{
+    padding:18px 0; font-size:13px; color:var(--muted); font-style:italic;
+  }
+  .state-msg.error{color:var(--red);}
+
+  .pager{
+    display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap;
+    margin-top:34px;
+  }
+  .pager a{
+    display:inline-flex; align-items:center; gap:10px; text-decoration:none;
+    padding:11px 20px; border-radius:10px; border:1px solid var(--line); background:var(--card);
+    color:var(--teal-dark); font-weight:800; font-size:14px; transition:background .15s, color .15s, border-color .15s;
+  }
+  .pager a:hover{background:var(--teal); border-color:var(--teal); color:#fff;}
+  .pager .ar{font-size:18px; line-height:1; color:var(--gold-dark); transition:color .15s, transform .15s;}
+  .pager a:hover .ar{color:#fff;}
+  .pager a.prev:hover .ar{transform:translateX(-3px);}
+  .pager a.next:hover .ar{transform:translateX(3px);}
+
+  footer{
+    margin-top:30px; padding-top:16px; border-top:1px solid var(--line);
+    font-size:11.5px; color:var(--muted); line-height:1.6;
+  }
+  footer b{color:var(--ink);}
+  .proto-tag{
+    display:inline-block; margin-top:10px; padding:4px 10px; border-radius:20px;
+    background:var(--teal-light); color:var(--teal-dark); font-weight:700; font-size:11px;
+  }
+
+  @media (max-width:640px){
+    .stats{grid-template-columns:1fr;}
+    h1{font-size:26px;}
+    .range-row{flex-direction:column; align-items:flex-start;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="eyebrow">GATI Resource Center · Live Tracker</div>
+  <h1>GSM News Tracker</h1>
+  <p class="sub">
+    A running read on how the daily global mobility &amp; migration news flow is tilting for India's
+    labour-export ambitions.
+  </p>
+
+  <div class="meta-line">
+    <span><b>Window:</b> <span id="windowLabel">loading…</span></span>
+    <span><b>Items tagged:</b> <span id="totalItemsMeta">–</span></span>
+    <span><b>Briefings covered:</b> <span id="totalDaysMeta">–</span></span>
+    <span><b>Last updated:</b> <span id="lastUpdated">–</span></span>
+  </div>
+
+  <div class="range-row">
+    <span class="range-label">Show:</span>
+    <div class="range-toggle" id="rangeToggle">
+      <button data-range="7">7D</button>
+      <button data-range="30">30D</button>
+      <button data-range="90" class="active">90D</button>
+      <button data-range="365">1Y</button>
+      <button data-range="all">All</button>
+    </div>
+  </div>
+
+  <div class="stats">
+    <div class="stat pos">
+      <div class="badge" id="posPctBadge">–</div>
+      <div class="pct" id="posPct">–</div>
+      <div class="label">Positive Developments</div>
+      <div class="count" id="posCount"></div>
+    </div>
+    <div class="stat neu">
+      <div class="badge" id="neuPctBadge">–</div>
+      <div class="pct" id="neuPct">–</div>
+      <div class="label">Neutral Developments</div>
+      <div class="count" id="neuCount"></div>
+    </div>
+    <div class="stat neg">
+      <div class="badge" id="negPctBadge">–</div>
+      <div class="pct" id="negPct">–</div>
+      <div class="label">Negative Developments</div>
+      <div class="count" id="negCount"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Sentiment mix, selected window</h2>
+    <p class="desc">Every item tagged across briefings in the selected window, combined into one bar.</p>
+    <div class="mix-row">
+      <div class="mix-bar">
+        <div class="bar-track" id="mixTrack"></div>
+        <div class="bar-labels"><span>0%</span><span>50%</span><span>100%</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Daily item volume by sentiment</h2>
+    <p class="desc">Each bar is one Daily Briefing; height is the number of items tagged that day, split by colour. Gaps are days without a briefing on file.</p>
+    <div class="chart-box"><canvas id="stackChart" height="90"></canvas></div>
+    <div class="legend-row">
+      <span><span class="dot" style="background:var(--green)"></span>Positive Developments</span>
+      <span><span class="dot" style="background:var(--amber)"></span>Neutral Developments</span>
+      <span><span class="dot" style="background:var(--red)"></span>Negative Developments</span>
+    </div>
+  </div>
+
+  <div id="stateMsg" class="state-msg">Loading latest data…</div>
+
+  <nav class="pager" aria-label="More views">
+    <a class="prev" href="./feed.html"><span class="ar">←</span> Daily news feed</a>
+    <a class="next" href="./analysis.html">Further analysis <span class="ar">→</span></a>
+  </nav>
+
+  <footer>
+    <div><b>What "sentiment" means here:</b> each news item is tagged relative to GATI's core thesis — India's labour force as a solution to developed-market demographic shortages — not sentiment about the article's subject in general. A stricter US H-1B rule is "negative" even if it's neutral reporting; a new bilateral mobility pact is "positive."</div>
+    <div style="margin-top:6px;"><b>Source:</b> GATI Daily Mobility &amp; Migration Briefing, produced by a scheduled Claude Cowork task that searches, ranks India-specific &gt; destination-country &gt; competitor-country &gt; demographic news, tags each item 🔴🟡🟢, and posts to Slack. Counts here are those tags, rolled up — a curated top-line read, not a full census of published mobility news.</div>
+    <div class="proto-tag" id="protoTag">Live — updates automatically each weekday morning</div>
+  </footer>
+
+</div>
+
+<script>
+const COLORS = { green:'#2f9e6e', yellow:'#f2a93c', red:'#e05353' };
+let DATA = [];
+let LATEST = null;
+let stackChartRef = null;
+let currentRange = '90';
+
+function fmtDate(d){
+  return new Date(d+'T00:00:00').toLocaleDateString('en-GB',{day:'numeric',month:'short'});
+}
+function fmtDateLong(d){
+  return new Date(d+'T00:00:00').toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});
+}
+
+function filterData(range){
+  if(range === 'all') return DATA;
+  const cutoff = new Date(LATEST);
+  cutoff.setDate(cutoff.getDate() - Number(range) + 1);
+  return DATA.filter(d => new Date(d.date+'T00:00:00') >= cutoff);
+}
+
+function render(range){
+  currentRange = range;
+  const rows = filterData(range);
+  const rangeLabels = {
+    '7':'trailing 7 days', '30':'trailing 30 days', '90':'trailing 90 days',
+    '365':'trailing 1 year', 'all':'full history on file'
+  };
+  document.getElementById('windowLabel').textContent =
+    rows.length ? `${rangeLabels[range]} (${fmtDateLong(rows[0].date)} – ${fmtDateLong(rows[rows.length-1].date)})` : rangeLabels[range];
+
+  if(!rows.length){
+    document.getElementById('totalItemsMeta').textContent = '0 items';
+    document.getElementById('totalDaysMeta').textContent = '0';
+    ['pos','neu','neg'].forEach(k=>{
+      document.getElementById(k+'Pct').textContent='–';
+      document.getElementById(k+'PctBadge').textContent='–';
+      document.getElementById(k+'Count').textContent='0 items';
+    });
+    document.getElementById('mixTrack').innerHTML = '';
+    if(stackChartRef) stackChartRef.destroy();
+    return;
+  }
+
+  const totals = rows.reduce((a,d)=>({green:a.green+d.green, yellow:a.yellow+d.yellow, red:a.red+d.red}), {green:0,yellow:0,red:0});
+  const grand = totals.green+totals.yellow+totals.red;
+  const pct = n => grand ? Math.round((n/grand)*1000)/10 : 0;
+
+  document.getElementById('totalItemsMeta').textContent = grand + ' items';
+  document.getElementById('totalDaysMeta').textContent = rows.length;
+
+  document.getElementById('posPct').textContent = pct(totals.green)+'%';
+  document.getElementById('posPctBadge').textContent = pct(totals.green)+'%';
+  document.getElementById('posCount').textContent = totals.green+' items';
+
+  document.getElementById('neuPct').textContent = pct(totals.yellow)+'%';
+  document.getElementById('neuPctBadge').textContent = pct(totals.yellow)+'%';
+  document.getElementById('neuCount').textContent = totals.yellow+' items';
+
+  document.getElementById('negPct').textContent = pct(totals.red)+'%';
+  document.getElementById('negPctBadge').textContent = pct(totals.red)+'%';
+  document.getElementById('negCount').textContent = totals.red+' items';
+
+  const track = document.getElementById('mixTrack');
+  track.innerHTML = '';
+  [['green',totals.green],['yellow',totals.yellow],['red',totals.red]].forEach(([k,v])=>{
+    if(!v) return;
+    const seg = document.createElement('div');
+    seg.className='bar-seg';
+    seg.style.width = (v/grand*100)+'%';
+    seg.style.background = COLORS[k];
+    seg.title = k+': '+v;
+    track.appendChild(seg);
+  });
+
+  if(stackChartRef) stackChartRef.destroy();
+  stackChartRef = new Chart(document.getElementById('stackChart'), {
+    type:'bar',
+    data:{
+      labels: rows.map(d=>fmtDate(d.date)),
+      datasets:[
+        {label:'Positive', data:rows.map(d=>d.green), backgroundColor:COLORS.green, stack:'s'},
+        {label:'Neutral', data:rows.map(d=>d.yellow), backgroundColor:COLORS.yellow, stack:'s'},
+        {label:'Negative', data:rows.map(d=>d.red), backgroundColor:COLORS.red, stack:'s'}
+      ]
+    },
+    options:{
+      responsive:true,
+      plugins:{ legend:{display:false}, tooltip:{mode:'index', intersect:false} },
+      scales:{
+        x:{ stacked:true, grid:{display:false}, ticks:{maxRotation:60, minRotation:60, font:{size:10}, color:'#5f7574', autoSkip:true, maxTicksLimit:24} },
+        y:{ stacked:true, grid:{color:'#eef4f3'}, ticks:{precision:0, color:'#5f7574'} }
+      }
+    }
+  });
+}
+
+document.getElementById('rangeToggle').addEventListener('click', (e)=>{
+  if(e.target.tagName !== 'BUTTON') return;
+  document.querySelectorAll('#rangeToggle button').forEach(b=>b.classList.remove('active'));
+  e.target.classList.add('active');
+  render(e.target.dataset.range);
+});
+
+// ---- load live data ----
+fetch('./data/daily_summary.json')
+  .then(r => { if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); })
+  .then(json => {
+    if(!Array.isArray(json) || json.length === 0){
+      document.getElementById('stateMsg').textContent = 'No data yet — the tracker will populate after the first scheduled run.';
+      return;
+    }
+    DATA = json.sort((a,b)=> a.date.localeCompare(b.date));
+    LATEST = new Date(DATA[DATA.length-1].date+'T00:00:00');
+    document.getElementById('lastUpdated').textContent = fmtDateLong(DATA[DATA.length-1].date);
+    document.getElementById('stateMsg').style.display = 'none';
+    render(currentRange);
+  })
+  .catch(err => {
+    const el = document.getElementById('stateMsg');
+    el.textContent = 'Could not load live data (data/daily_summary.json) — check the file exists and the page is served over http(s), not opened as a local file.';
+    el.classList.add('error');
+    console.error(err);
+  });
+</script>
+
+</body>
+</html>
