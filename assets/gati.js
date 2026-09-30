@@ -1,4 +1,4 @@
-/* GATI Mobility Sentiment Tracker — shared data + filter module
+/* GSM News Tracker — shared data + filter module
  * Used by feed.html and analysis.html. Reads ./data/items.csv, normalises it,
  * and drives the filter sidebar (state is mirrored in the URL so a filtered
  * view can be shared or carried between pages).
@@ -8,9 +8,9 @@ window.GATI = (function () {
 
   /* ------------------------------------------------------------ constants */
   const SENT = {
-    positive: { label: 'Positive', color: '#2f9e6e', arrow: '▲' },
-    neutral:  { label: 'Neutral',  color: '#f2a93c', arrow: '●' },
-    negative: { label: 'Negative', color: '#e05353', arrow: '▼' }
+    positive: { label: 'Positive Developments', color: '#2f9e6e', arrow: '▲' },
+    neutral:  { label: 'Neutral Developments',  color: '#f2a93c', arrow: '●' },
+    negative: { label: 'Negative Developments', color: '#e05353', arrow: '▼' }
   };
   const SENT_ORDER = ['positive', 'neutral', 'negative'];
 
@@ -60,6 +60,19 @@ window.GATI = (function () {
       .trim();
   }
   const cleanUrl = u => decode(u).replace(/[<>]/g, '').split('|')[0].trim();
+
+  // Mirrors fetch_and_process.py's normalize_vibe(): strips invisible
+  // Unicode format characters (zero-width space/joiner, BOM, soft hyphen...)
+  // that can ride along in an LLM- or Slack-produced cell and defeat a
+  // plain string match, then matches on a 3-letter prefix. Belt-and-braces
+  // alongside the same fix server-side, in case a row was written before
+  // that fix landed, or by a source other than the pipeline.
+  function normVibe(raw) {
+    const cleaned = String(raw || '').replace(/[\u200B-\u200F\u00AD\uFEFF\u2060]/g, '').trim().toLowerCase();
+    for (const canon of ['positive', 'negative', 'neutral']) { if (cleaned.startsWith(canon.slice(0, 3))) return canon; }
+    return '';
+  }
+
   const hostOf = u => { try { return new URL(u).hostname.replace(/^www\./, ''); } catch (e) { return ''; } };
   const normKey = s => String(s || '').toLowerCase().replace(/^update:\s*/, '').replace(/[^a-z0-9]/g, '');
 
@@ -135,7 +148,7 @@ window.GATI = (function () {
       if (!headline || /^quiet news day/i.test(headline) || !/^https?:/i.test(url) || !/^\d{4}-\d{2}-\d{2}$/.test(date)) { ignored++; return; }
       const host = hostOf(url);
       const source = decode(r.source) || host;
-      const vibe = SENT[(r.vibe || '').trim().toLowerCase()] ? r.vibe.trim().toLowerCase() : 'neutral';
+      const vibe = normVibe(r.vibe) || 'neutral';
       const buckets = [...new Set(decode(r.categories).split('|').map(normBucket).filter(Boolean))];
       const countries = [...new Set(decode(r.countries).split('|').map(normCountry).filter(Boolean))];
       const exKey = host + ' ' + source.toLowerCase().replace(/[\s.\-]/g, '');
