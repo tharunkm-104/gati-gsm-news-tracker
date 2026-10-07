@@ -1,24 +1,13 @@
-# .github/workflows/google_alerts_ingest.yml
-#
-# Fully isolated from .github/workflows/daily-update.yml. This workflow
-# only ever touches:
-#   - scripts/google_alerts_ingest.py
-#   - data/google_alerts_items.csv
-# It never runs fetch_and_process.py and never writes data/items.csv.
-
 name: Google Alerts Ingest (Gemini tagging)
 
 on:
   schedule:
-    # Offset from your existing daily-update.yml schedule so you can tell
-    # the two pipelines' commits apart in the repo history. Adjust the
-    # hour to whenever your Alerts feeds tend to have settled for the day
-    # (UTC time — e.g. 5:30 AM UTC = 11:00 AM IST).
+    # 5:30 AM UTC = 11:00 AM IST
     - cron: "30 5 * * *"
-  workflow_dispatch: {}   # lets you trigger a manual run from the Actions tab
+  workflow_dispatch: {}  # Allows manual runs from the Actions tab
 
 permissions:
-  contents: write   # needed to commit the updated CSV back to the repo
+  contents: write  # Required to commit the updated CSV back to the repository
 
 jobs:
   ingest:
@@ -31,24 +20,22 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+          cache: "pip"
+          cache-dependency-path: "scripts/requirements-alerts.txt"
 
       - name: Install dependencies
         run: |
+          python -m pip install --upgrade pip
           pip install -r scripts/requirements-alerts.txt
 
       - name: Run Google Alerts ingest + Gemini tagging
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-          # ALERTS_CSV_PATH defaults to data/google_alerts_items.csv inside
-          # the script itself — only set this secret/var if you want to
-          # override that default.
         run: |
           python scripts/google_alerts_ingest.py
 
       - name: Commit updated CSV
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add data/google_alerts_items.csv
-          git diff --cached --quiet || git commit -m "Google Alerts ingest: $(date -u +'%Y-%m-%d')"
-          git push
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "Google Alerts ingest auto-update"
+          file_pattern: "data/google_alerts_items.csv"
