@@ -102,6 +102,7 @@ def fetch_all_feeds():
                 "url": entry.get("link", "").strip(),
                 "source_domain": urlparse(entry.get("link", "")).netloc,
                 "published": entry.get("published", "") or entry.get("updated", ""),
+                "pub_struct": entry.get("published_parsed") or entry.get("updated_parsed"),
             })
     return raw_items
 
@@ -110,24 +111,32 @@ def fetch_all_feeds():
 # STEP 2 — DATE WINDOW (deterministic, no LLM)
 # ---------------------------------------------------------------------------
 
-def in_date_window(published_str, now=None):
+def in_date_window(item, now=None):
     now = now or datetime.now(timezone.utc)
-    try:
-        parsed_struct = feedparser._parse_date(published_str)
-        if parsed_struct is None:
-            return False
-        pub_dt = datetime(*parsed_struct[:6], tzinfo=timezone.utc)
-    except Exception:
-        return False
+    pub_struct = item.get("pub_struct")
+    
+    if pub_struct:
+        try:
+            pub_dt = datetime(*pub_struct[:6], tzinfo=timezone.utc)
+        except Exception:
+            return True  # If date parsing fails, keep the item
+    else:
+        return True
 
-    if now.weekday() == 0:  # Monday
-        window_start = (now - timedelta(days=now.weekday() + 1)).replace(
-            hour=0, minute=0, second=0, microsecond=0
-        ) - timedelta(days=1)  # back up to Saturday 00:00
-        return window_start <= pub_dt <= now
+    # 1. FIRST RUN (CSV file doesn't exist yet): Catch up on past 7 days
+    if not os.path.exists(ALERTS_CSV_PATH):
+        window_start = now - timedelta(days=7)
+    
+    # 2. MONDAY RUNS: Cover weekend back to Saturday 00:00
+    elif now.weekday() == 0:
+        window_start = (now - timedelta(days=3)).replace(hour=0, minute=0, second=0, microsecond=0)
+        
+    # 3. DAILY RUNS: Past 24 hours
     else:
         window_start = now - timedelta(hours=24)
-        return window_start <= pub_dt <= now
+
+    # +12 hour buffer for timezone skew
+    return window_start <= pub_dt <= (now + timedelta(hours=12))
 
 
 # ---------------------------------------------------------------------------
@@ -350,7 +359,7 @@ def main():
     raw_items = fetch_all_feeds()
     print(f"  {len(raw_items)} raw entries across {len(ALL_FEED_URLS)} feeds.")
 
-    windowed = [item for item in raw_items if in_date_window(item["published"])]
+    windowed = [item for item in raw_items if in_date_window(item)]
     print(f"  {len(windowed)} entries in today's date window.")
 
     seen_urls, seen_stems = load_seen_set(days=7)
