@@ -1,0 +1,10 @@
+# Dependencies for scripts/google_alerts_ingest.py only.
+# Kept separate from scripts/requirements.txt (the existing
+# fetch_and_process.py pipeline) on purpose, per the isolation setup.
+#
+# Confirm exact package names/versions at pypi.org before pinning —
+# google-genai in particular has been renamed before.
+feedparser
+google-genai
+requests
+trafilatura
