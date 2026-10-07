@@ -22,15 +22,16 @@ jobs:
           python-version: "3.12"
           cache: "pip"
           cache-dependency-path: "scripts/requirements-alerts.txt"
-
+      
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r scripts/requirements-alerts.txt
-
+      
       - name: Run Google Alerts ingest + Gemini tagging
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GEMINI_MODEL: "gemini-3.5-flash-lite"  # Upgrades to current 3.x series model
         run: |
           python scripts/google_alerts_ingest.py
 
