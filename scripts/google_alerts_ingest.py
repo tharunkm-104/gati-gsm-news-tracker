@@ -319,11 +319,14 @@ def in_date_window(published_iso, now=None):
 # ---------------------------------------------------------------------------
 
 def load_seen_set(days=7):
-    """Return (seen_urls: set, seen_headline_stems: set) from items.csv."""
-    seen_urls = set()
-    seen_stems = set()
+    """
+    Return (seen_urls, seen_headline_stems, seen_items) for the last `days`
+    days of ALERTS_CSV_PATH. seen_items carries headline + summary +
+    countries so Gemini can match by underlying EVENT, not headline wording.
+    """
+    seen_urls, seen_stems, seen_items = set(), set(), []
     if not os.path.exists(ALERTS_CSV_PATH):
-        return seen_urls, seen_stems
+        return seen_urls, seen_stems, seen_items
 
     cutoff = datetime.now(timezone.utc).date() - timedelta(days=days)
     with open(ALERTS_CSV_PATH, newline="", encoding="utf-8") as f:
@@ -335,7 +338,14 @@ def load_seen_set(days=7):
             if row_date >= cutoff:
                 seen_urls.add(row.get("url", ""))
                 seen_stems.add(row.get("headline", "").strip().lower())
-    return seen_urls, seen_stems
+                seen_items.append({
+                    "date": row.get("date", ""),
+                    "headline": row.get("headline", ""),
+                    "summary": row.get("summary", ""),
+                    "countries": row.get("countries", ""),
+                    "url": row.get("url", ""),
+                })
+    return seen_urls, seen_stems, seen_items
 
 
 # ---------------------------------------------------------------------------
@@ -409,11 +419,16 @@ across the WHOLE item set you were given, not just within any sub-section
 of it.
 
 PART 3 -- ALREADY-POSTED CHECK
-You are given a list of URLs and headline stems already posted in the last
-7 days. If a surviving item matches one of these, drop it UNLESS it
-contains a genuine material update (a new number, a signed deal, a
-confirmed effective date, a court ruling) -- in that case keep it, prefix
-the headline with "UPDATE:", and make the summary about what changed.
+You are given the items already posted in the last 7 days (date, headline,
+summary, countries, url). Compare each surviving candidate against them by
+UNDERLYING EVENT, using the summaries -- NOT by headline wording. A new
+article from a different outlet, with a differently-worded headline, about
+the same announcement, report, ruling or statistic as a past item is the
+SAME story and must be dropped. Only keep it if it contains a genuine
+material update (a new number, a signed deal, a confirmed effective date,
+a court ruling, a government response) -- in that case keep it, prefix the
+headline with "UPDATE:", and make the summary about what changed. If the
+only difference is a different outlet or extra background, drop it.
 
 PART 4 -- CATEGORISE, INFER RELEVANCE, AND TAG
 For every item that survives Parts 1-3, read the full title/content and:
@@ -423,6 +438,11 @@ set (copy them verbatim, nothing else -- never put a theme name, a country
 name, or any other string in this field): India Specific | Destination
 Countries | Competitor Countries | Demographics & Fertility | Global &
 Multilateral.
+  - "Competitor Countries" means ONLY these labour-sending rivals:
+    Philippines, Vietnam, Indonesia, Turkey, Brazil, Poland, Romania,
+    Ukraine, Bulgaria, Bangladesh, Nepal, Sri Lanka. A story about a
+    country where Indians go to study/work (Japan, Germany, Australia,
+    Canada, the Gulf, etc.) is "Destination Countries", never Competitor.
   - Use "India Specific" only when India, Indian workers, Indian students,
     NRIs, or an India bilateral deal is directly named.
   - For Destination/Competitor Country items where India is NOT named,
@@ -453,7 +473,8 @@ holders", "Gulf blue-collar workers", "Indian nursing graduates",
 students (undergraduate)"). This is a factual extraction, not a
 prediction -- only name groups the article itself identifies or makes
 unambiguous, never groups you're inferring might plausibly be affected
-downstream. This field is for internal analysis only and is never shown
+downstream. List the groups AFFECTED, not the authorities acting (e.g.
+"international students", not "DHS" or "the government"). This field is for internal analysis only and is never shown
 in the Slack bulletin.
 
 PART 5 -- RANK
@@ -538,17 +559,14 @@ def load_prompt_template():
     return GEMINI_PROMPT_TEMPLATE
 
 
-def tag_items_gemini(candidate_items, seen_urls, seen_stems):
+def tag_items_gemini(candidate_items, seen_items):
     if not candidate_items:
         return []
 
     client = genai.Client(api_key=GEMINI_API_KEY)
     prompt = load_prompt_template().format(
         items_json=json.dumps(candidate_items, ensure_ascii=False),
-        seen_set_json=json.dumps(
-            {"urls": sorted(seen_urls), "headline_stems": sorted(seen_stems)},
-            ensure_ascii=False,
-        ),
+        seen_set_json=json.dumps(seen_items, ensure_ascii=False),
         today_date=datetime.now(timezone.utc).strftime("%Y-%m-%d"),
     )
 
@@ -859,7 +877,7 @@ def main():
     gated = python_prefilter(windowed)
     print(f"  {len(gated)} entries survive the Python domain/live-blog gate.")
 
-    seen_urls, seen_stems = load_seen_set(days=7)
+    seen_urls, seen_stems, seen_items = load_seen_set(days=7)
     print(f"  {len(seen_urls)} URLs / {len(seen_stems)} headline stems seen in last 7 days.")
 
     # Cheap pre-filter: drop exact URL matches before even sending to Gemini
@@ -877,7 +895,7 @@ def main():
     )
     print(f"  sending {len(candidates)} candidates to Gemini.")
 
-    tagged_rows = tag_items_gemini(candidates, seen_urls, seen_stems)
+    tagged_rows = tag_items_gemini(candidates, seen_items)
     print(f"  Gemini returned {len(tagged_rows)} tagged row(s).")
 
     final_rows = post_validate_rows(tagged_rows)
