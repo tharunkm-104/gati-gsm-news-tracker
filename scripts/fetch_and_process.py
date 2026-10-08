@@ -1,4 +1,5 @@
-import os, csv, json, io, re, unicodedata
+import os, csv, json, io, re, unicodedata, html
+from datetime import datetime, timezone
 import requests
 
 TOKEN = os.environ["SLACK_BOT_TOKEN"]
@@ -103,16 +104,63 @@ def row_is_structurally_sane(row):
     return True, ""
 
 
-# Slack's mrkdwn has no concept of a fenced-code "language" tag (unlike GitHub
-# Markdown), so a message posted as ```csv ... ``` and one posted as ``` ... ```
-# are indistinguishable once they hit the API — Cowork may or may not include
-# the "csv" tag literally. Anchor on the actual header row instead of the tag.
-CSV_FENCE_RE = re.compile(
-    r"```(?:csv)?\s*\n?"
-    r"(date,headline,url,categories,summary,vibe,in_top7,source.*?)"
-    r"\s*```",
-    re.DOTALL | re.IGNORECASE,
+# The CSV header row is the anchor — NOT the ``` fence. Cowork's post is not
+# always fenced (or the fence can be mangled/prefixed), and a fence-only regex
+# then matches nothing and the whole post is silently ignored. We find the
+# header line anywhere in the message and read to the closing fence if there
+# is one, otherwise to the end of the message.
+HEADER_RE = re.compile(
+    r"^[^\S\n]*date,headline,url,categories,summary,vibe,in_top7,source[^\n]*$",
+    re.IGNORECASE | re.MULTILINE,
 )
+
+
+def extract_csv_block(text):
+    """Return the CSV text inside one Slack message, or None.
+
+    - Slack's API HTML-escapes & < > in message text ('&amp;' etc), which
+      corrupts 'Global & Multilateral' and any URL with a query string, so
+      unescape first (this also turns '&lt;url&gt;' back into '<url>' for
+      clean_url() to handle).
+    - Invisible format chars (BOM, zero-width space) before the header are
+      stripped so they can't hide it.
+    """
+    text = "".join(ch for ch in html.unescape(text or "") if unicodedata.category(ch) != "Cf")
+    m = HEADER_RE.search(text)
+    if not m:
+        return None
+    block = text[m.start():]
+    fence = block.find("```")
+    if fence != -1:
+        block = block[:fence]
+    return block.strip()
+
+
+def parse_block(csv_text, stats):
+    """Parse one CSV block into dicts keyed by the block's own header.
+
+    Cowork does not always quote a headline that contains a comma
+    ('US DHS Proposes $70,000 Fee...'), which splits it into two fields and
+    shifts every later column right. If a row has more fields than the
+    header, the first URL-shaped field is the anchor: everything between the
+    date and that URL is the headline, so re-join it.
+    """
+    reader = csv.reader(io.StringIO(csv_text))
+    header = [h.strip().lower() for h in next(reader)]
+    n, ui = len(header), header.index("url")
+    for f in reader:
+        if not any(c.strip() for c in f):
+            continue
+        if len(f) > n:
+            u = next((i for i in range(ui, len(f)) if re.match(r"\s*<?https?://", f[i])), None)
+            if u is not None and u > ui:
+                f = f[:ui - 1] + [",".join(f[ui - 1:u])] + f[u:]
+                stats["repaired"] += 1
+        if len(f) != n:
+            stats["bad_shape"] += 1
+            print(f"WARNING: row has {len(f)} fields, expected {n} — skipped: {f[:2]!r}")
+            continue
+        yield dict(zip(header, f))
 
 
 def get_all_csv_blocks(limit=50):
@@ -136,11 +184,17 @@ def get_all_csv_blocks(limit=50):
         )
 
     blocks = []
-    for msg in resp.get("messages", []):
+    for i, msg in enumerate(resp.get("messages", [])):
         text = msg.get("text", "")
-        m = CSV_FENCE_RE.search(text)
-        if m:
-            blocks.append(m.group(1))
+        block = extract_csv_block(text)
+        if i < 10:  # newest 10 messages: always say what we saw, so a miss is never silent
+            ts = datetime.fromtimestamp(float(msg["ts"]), tz=timezone.utc).strftime("%Y-%m-%d %H:%MZ")
+            print(f"DEBUG msg#{i} {ts} len={len(text)} fence={'```' in text} "
+                  f"csv_found={block is not None} head={text[:60]!r}")
+        if block:
+            blocks.append(block)
+        elif "```" in text or "http" in text:
+            print(f"NOTE: message #{i} has a fence/link but no CSV header — ignored: {text[:80]!r}")
     return blocks
 
 
@@ -211,9 +265,10 @@ def main():
 
     blocks = get_all_csv_blocks()
     added = 0
+    stats = {"repaired": 0, "bad_shape": 0, "bad_url": 0, "dup": 0, "shifted": 0}
     if blocks:
         for csv_text in blocks:
-            for row in csv.DictReader(io.StringIO(csv_text)):
+            for row in parse_block(csv_text, stats):
                 url = clean_url(row.get("url") or "")
                 if not url:
                     print(f"WARNING: could not extract a clean URL for "
@@ -222,16 +277,20 @@ def main():
                           f"own link markup) mangled the url cell; the raw value was "
                           f"{(row.get('url') or '')[:120]!r}. Check #mobility-news-dump and "
                           f"add this item manually if it's genuine.")
+                    stats["bad_url"] += 1
                     continue
                 if url in seen_urls:
+                    stats["dup"] += 1
                     continue  # dedup — safe to re-run this script any time
                 clean = {k: (row.get(k) or "").strip() for k in FIELDNAMES}
                 clean["url"] = url
+                clean["date"] = normalize_date(clean["date"])
                 sane, reason = row_is_structurally_sane(clean)
                 if not sane:
                     print(f"WARNING: row for {clean['date']} {clean['headline'][:70]!r} "
                           f"looks column-shifted ({reason}) — skipped rather than ingested "
                           f"wrong. Check #mobility-news-dump and add this item manually if genuine.")
+                    stats["shifted"] += 1
                     continue
                 if not categories_look_valid(clean["categories"]):
                     print(f"WARNING: unrecognised categories {clean['categories']!r} on "
@@ -248,6 +307,9 @@ def main():
                 seen_urls.add(url)
                 added += 1
         print(f"Added {added} new item(s) from {len(blocks)} block(s). Total logged: {len(items)}.")
+        print(f"  skipped: {stats['dup']} duplicate URL, {stats['bad_url']} bad URL, "
+              f"{stats['shifted']} column-shifted, {stats['bad_shape']} wrong field count; "
+              f"{stats['repaired']} unquoted-comma headline(s) repaired.")
     else:
         print("No CSV blocks found in recent messages — skipping (gap will show in chart).")
 
