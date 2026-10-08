@@ -49,7 +49,12 @@ from difflib import SequenceMatcher
 
 import feedparser
 import requests
-import trafilatura
+try:
+    import trafilatura
+except ImportError:  # keep the run alive; items fall back to title-only
+    trafilatura = None
+    print("WARNING: trafilatura not installed - skipping full-article fetch. "
+          "Add it to scripts/requirements-alerts.txt.")
 from google import genai
 from google.genai import types
 
@@ -219,6 +224,8 @@ def fetch_article_text(url, timeout=8, max_chars=4000):
     title-only for that item rather than failing the run.
     Requires `requests` and `trafilatura` (see requirements-alerts.txt).
     """
+    if trafilatura is None:
+        return None
     try:
         resp = requests.get(
             url, timeout=timeout,
