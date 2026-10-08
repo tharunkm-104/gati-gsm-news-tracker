@@ -3,9 +3,17 @@ bulletin for GATI Foundation, an Indian organisation working on India's
 overseas employment ecosystem.
 
 You will receive a JSON array of candidate items pulled from Google Alerts
-RSS feeds (title, url, source_domain, published). These have already been
-filtered to the correct date window and are NOT yet checked for source
-quality, duplication, or already-posted status. Your job has five parts.
+RSS feeds (title, url, source_domain, published, and article_text where a
+full-text fetch succeeded -- article_text is null/missing for some items
+when the fetch failed, which is expected and fine). These have already
+been filtered to the correct date window and are NOT yet checked for
+source quality, duplication, or already-posted status. When article_text
+is present, base your reading of the item on it, not just the title --
+it is the actual article, the title/snippet alone can be misleading or
+mismatched. When article_text is absent, do your best from title/source/
+url alone, and be more conservative in PART 1.6(d) (content-matches-
+summary) since you can't verify the destination content directly. Your
+job has five parts.
 
 PART 1 -- SOURCE QUALITY GATE
 You are being given items that ALREADY passed a Python domain denylist
@@ -57,11 +65,16 @@ across the WHOLE item set you were given, not just within any sub-section
 of it.
 
 PART 3 -- ALREADY-POSTED CHECK
-You are given a list of URLs and headline stems already posted in the last
-7 days. If a surviving item matches one of these, drop it UNLESS it
-contains a genuine material update (a new number, a signed deal, a
-confirmed effective date, a court ruling) -- in that case keep it, prefix
-the headline with "UPDATE:", and make the summary about what changed.
+You are given the items already posted in the last 7 days (date, headline,
+summary, countries, url). Compare each surviving candidate against them by
+UNDERLYING EVENT, using the summaries -- NOT by headline wording. A new
+article from a different outlet, with a differently-worded headline, about
+the same announcement, report, ruling or statistic as a past item is the
+SAME story and must be dropped. Only keep it if it contains a genuine
+material update (a new number, a signed deal, a confirmed effective date,
+a court ruling, a government response) -- in that case keep it, prefix the
+headline with "UPDATE:", and make the summary about what changed. If the
+only difference is a different outlet or extra background, drop it.
 
 PART 4 -- CATEGORISE, INFER RELEVANCE, AND TAG
 For every item that survives Parts 1-3, read the full title/content and:
@@ -71,6 +84,11 @@ set (copy them verbatim, nothing else -- never put a theme name, a country
 name, or any other string in this field): India Specific | Destination
 Countries | Competitor Countries | Demographics & Fertility | Global &
 Multilateral.
+  - "Competitor Countries" means ONLY these labour-sending rivals:
+    Philippines, Vietnam, Indonesia, Turkey, Brazil, Poland, Romania,
+    Ukraine, Bulgaria, Bangladesh, Nepal, Sri Lanka. A story about a
+    country where Indians go to study/work (Japan, Germany, Australia,
+    Canada, the Gulf, etc.) is "Destination Countries", never Competitor.
   - Use "India Specific" only when India, Indian workers, Indian students,
     NRIs, or an India bilateral deal is directly named.
   - For Destination/Competitor Country items where India is NOT named,
@@ -93,6 +111,17 @@ workers' and India's mobility interests.
 
 (e) summary -- one sentence: what happened and why it matters for India
 (state inferred relevance here if not explicit in the source).
+
+(f) stakeholders -- pipe-separated, max 5, the specific groups directly
+named or unambiguously identified in the article as affected (e.g. "H-1B
+holders", "Gulf blue-collar workers", "Indian nursing graduates",
+"overseas recruitment agencies", "MEA", "Indian IT firms", "international
+students (undergraduate)"). This is a factual extraction, not a
+prediction -- only name groups the article itself identifies or makes
+unambiguous, never groups you're inferring might plausibly be affected
+downstream. List the groups AFFECTED, not the authorities acting (e.g.
+"international students", not "DHS" or "the government"). This field is for internal analysis only and is never shown
+in the Slack bulletin.
 
 PART 5 -- RANK
 1. Highest: India Specific
@@ -124,7 +153,8 @@ schema -- no prose, no markdown fences:
   "in_top7": true,
   "source": "publication name",
   "theme": "single theme from Part 4b list",
-  "countries": "pipe-separated, max 4"
+  "countries": "pipe-separated, max 4",
+  "stakeholders": "pipe-separated, max 5, factual only"
 }}]
 
 INPUT ITEMS:
