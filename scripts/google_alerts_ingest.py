@@ -48,6 +48,8 @@ from urllib.parse import urlparse, parse_qs, unquote
 from difflib import SequenceMatcher
 
 import feedparser
+import requests
+import trafilatura
 from google import genai
 from google.genai import types
 
@@ -66,7 +68,7 @@ GEMINI_MODEL = os.environ.get("GEMINI_MODEL", "gemini-2.5-flash-lite")
 
 FIELDNAMES = [
     "date", "headline", "url", "categories", "summary",
-    "vibe", "in_top7", "source", "theme", "countries",
+    "vibe", "in_top7", "source", "theme", "countries", "stakeholders",
 ]
 
 # Your 26 live feeds, grouped by bucket (bucket label is informational only —
@@ -181,6 +183,18 @@ def is_live_blog_url(url):
 # STEP 1 — FETCH
 # ---------------------------------------------------------------------------
 
+def _entry_published_iso(entry):
+    """
+    Use the date feedparser has ALREADY parsed (published_parsed /
+    updated_parsed, UTC struct_time) and store it as ISO-8601. Returns ""
+    if the entry has no usable date.
+    """
+    struct = entry.get("published_parsed") or entry.get("updated_parsed")
+    if not struct:
+        return ""
+    return datetime(*struct[:6], tzinfo=timezone.utc).isoformat()
+
+
 def fetch_all_feeds():
     """Pull every configured feed, return a flat list of raw, cleaned entries."""
     raw_items = []
@@ -192,9 +206,53 @@ def fetch_all_feeds():
                 "title": entry.get("title", "").strip(),
                 "url": link,
                 "source_domain": urlparse(link).netloc,
-                "published": entry.get("published", "") or entry.get("updated", ""),
+                "published": _entry_published_iso(entry),
             })
     return raw_items
+
+
+def fetch_article_text(url, timeout=8, max_chars=4000):
+    """
+    Best-effort full-article-text fetch, so Gemini reasons from the actual
+    article rather than just a headline. Failures are expected and fine —
+    paywalls, bot-blocking, timeouts, non-HTML responses — fall back to
+    title-only for that item rather than failing the run.
+    Requires `requests` and `trafilatura` (see requirements-alerts.txt).
+    """
+    try:
+        resp = requests.get(
+            url, timeout=timeout,
+            headers={"User-Agent": "Mozilla/5.0 (compatible; GATIMobilityBot/1.0)"},
+        )
+        if resp.status_code != 200:
+            return None
+        text = trafilatura.extract(resp.text, include_comments=False)
+        if not text:
+            return None
+        return text.strip()[:max_chars]
+    except Exception as e:
+        print(f"  [article-fetch] failed for {url}: {e}")
+        return None
+
+
+def enrich_with_article_text(items, max_items=None):
+    """
+    Adds an 'article_text' field to each item (None if fetch failed).
+    max_items caps how many fetches run per invocation, to bound runtime
+    and avoid hammering publishers if a feed has an unusually large batch
+    on a given day — trim the candidate list before calling this if you
+    want a different cap than the default.
+    """
+    enriched = []
+    for i, item in enumerate(items):
+        if max_items is not None and i >= max_items:
+            item["article_text"] = None
+        else:
+            item["article_text"] = fetch_article_text(item["url"])
+        enriched.append(item)
+    fetched_ok = sum(1 for it in enriched if it.get("article_text"))
+    print(f"  [article-fetch] got full text for {fetched_ok}/{len(enriched)} items.")
+    return enriched
 
 
 def python_prefilter(items):
@@ -220,30 +278,33 @@ def python_prefilter(items):
 # STEP 2 — DATE WINDOW (deterministic, no LLM)
 # ---------------------------------------------------------------------------
 
-def in_date_window(published_str, now=None):
+def in_date_window(published_iso, now=None):
     """
-    Last 24h by default. On a Monday run, widen to cover Saturday 00:00
-    through Sunday 23:59 (in addition to the normal last-24h coverage of
-    Sunday evening into Monday), so weekend news isn't lost.
+    Default: last WINDOW_HOURS (24) hours. On a Monday run, widen to cover
+    Saturday 00:00 UTC onward so weekend news isn't lost. Set the
+    WINDOW_HOURS env var (e.g. 168 for 7 days) for a one-off backfill —
+    note Google Alerts feeds only hold what they've collected since each
+    alert was created, so a wider window can't return older items than
+    the feeds actually contain.
     """
     now = now or datetime.now(timezone.utc)
+    if not published_iso:
+        return False
     try:
-        # feedparser dates are RFC 822-ish; let feedparser's own parser handle it
-        parsed_struct = feedparser._parse_date(published_str)
-        if parsed_struct is None:
-            return False
-        pub_dt = datetime(*parsed_struct[:6], tzinfo=timezone.utc)
-    except Exception:
+        pub_dt = datetime.fromisoformat(published_iso)
+    except ValueError:
         return False
 
-    if now.weekday() == 0:  # Monday
-        window_start = (now - timedelta(days=now.weekday() + 1)).replace(
+    override = os.environ.get("WINDOW_HOURS")
+    if override:
+        return now - timedelta(hours=int(override)) <= pub_dt <= now
+
+    if now.weekday() == 0:  # Monday: back to Saturday 00:00 UTC
+        window_start = (now - timedelta(days=2)).replace(
             hour=0, minute=0, second=0, microsecond=0
-        ) - timedelta(days=1)  # back up to Saturday 00:00
+        )
         return window_start <= pub_dt <= now
-    else:
-        window_start = now - timedelta(hours=24)
-        return window_start <= pub_dt <= now
+    return now - timedelta(hours=24) <= pub_dt <= now
 
 
 # ---------------------------------------------------------------------------
@@ -279,9 +340,17 @@ bulletin for GATI Foundation, an Indian organisation working on India's
 overseas employment ecosystem.
 
 You will receive a JSON array of candidate items pulled from Google Alerts
-RSS feeds (title, url, source_domain, published). These have already been
-filtered to the correct date window and are NOT yet checked for source
-quality, duplication, or already-posted status. Your job has five parts.
+RSS feeds (title, url, source_domain, published, and article_text where a
+full-text fetch succeeded -- article_text is null/missing for some items
+when the fetch failed, which is expected and fine). These have already
+been filtered to the correct date window and are NOT yet checked for
+source quality, duplication, or already-posted status. When article_text
+is present, base your reading of the item on it, not just the title --
+it is the actual article, the title/snippet alone can be misleading or
+mismatched. When article_text is absent, do your best from title/source/
+url alone, and be more conservative in PART 1.6(d) (content-matches-
+summary) since you can't verify the destination content directly. Your
+job has five parts.
 
 PART 1 -- SOURCE QUALITY GATE
 You are being given items that ALREADY passed a Python domain denylist
@@ -370,6 +439,16 @@ workers' and India's mobility interests.
 (e) summary -- one sentence: what happened and why it matters for India
 (state inferred relevance here if not explicit in the source).
 
+(f) stakeholders -- pipe-separated, max 5, the specific groups directly
+named or unambiguously identified in the article as affected (e.g. "H-1B
+holders", "Gulf blue-collar workers", "Indian nursing graduates",
+"overseas recruitment agencies", "MEA", "Indian IT firms", "international
+students (undergraduate)"). This is a factual extraction, not a
+prediction -- only name groups the article itself identifies or makes
+unambiguous, never groups you're inferring might plausibly be affected
+downstream. This field is for internal analysis only and is never shown
+in the Slack bulletin.
+
 PART 5 -- RANK
 1. Highest: India Specific
 2. High: Destination Countries (extra weight: Europe, Japan, South Korea)
@@ -400,7 +479,8 @@ schema -- no prose, no markdown fences:
   "in_top7": true,
   "source": "publication name",
   "theme": "single theme from Part 4b list",
-  "countries": "pipe-separated, max 4"
+  "countries": "pipe-separated, max 4",
+  "stakeholders": "pipe-separated, max 5, factual only"
 }}]
 
 INPUT ITEMS:
@@ -427,6 +507,7 @@ RESPONSE_SCHEMA = {
             "source": {"type": "STRING"},
             "theme": {"type": "STRING"},
             "countries": {"type": "STRING"},
+            "stakeholders": {"type": "STRING"},
         },
         "required": FIELDNAMES,
     },
@@ -642,10 +723,128 @@ def append_rows(rows):
 # MAIN
 # ---------------------------------------------------------------------------
 
+# ---------------------------------------------------------------------------
+# STEP 6 — FORMAT + POST TO SLACK (optional, off by default)
+# ---------------------------------------------------------------------------
+
+BUCKET_HEADERS = [
+    ("India Specific", ":flag-in: India"),
+    ("Destination Countries", ":airplane: Destination Countries"),
+    ("Competitor Countries", ":earth_asia: Competitor Countries"),
+    ("Demographics & Fertility", ":bar_chart: Demographics & Fertility"),
+    ("Global & Multilateral", ":bar_chart: Demographics & Fertility"),  # folded in per spec
+]
+VIBE_EMOJI = {"negative": ":red_circle:", "neutral": ":large_yellow_circle:", "positive": ":large_green_circle:"}
+
+
+def _format_item_block(row):
+    emoji = VIBE_EMOJI.get(row.get("vibe", "neutral"), ":large_yellow_circle:")
+    country = (row.get("countries", "") or "Global").split("|")[0].strip()
+    return (
+        f"{emoji} *{row.get('headline', '')}*\n"
+        f":world_map: *{country}* | :newspaper: *{row.get('source', '')}* — "
+        f"Published {row.get('date', '')}\n"
+        f"{row.get('summary', '')}\n"
+        f":link: {row.get('url', '')}"
+    )
+
+
+def _format_bucket_sections(rows):
+    """Group rows by bucket in the fixed display order, skipping empties."""
+    seen_buckets_rendered = set()
+    sections = []
+    for bucket_name, header in BUCKET_HEADERS:
+        if header in seen_buckets_rendered:
+            continue  # Global & Multilateral folds into the same header as Demographics
+        bucket_rows = [
+            r for r in rows
+            if bucket_name in [c.strip() for c in r.get("categories", "").split("|")]
+        ]
+        if not bucket_rows:
+            continue
+        seen_buckets_rendered.add(header)
+        blocks = "\n\n".join(_format_item_block(r) for r in bucket_rows)
+        sections.append(f"{header}\n\n{blocks}")
+    return sections
+
+
+def format_slack_bulletin(rows):
+    """
+    Returns (main_text, thread_text) matching the existing bulletin's
+    emoji/format conventions. main_text covers in_top7=true rows, grouped
+    by bucket; thread_text covers everything else. Either half can come
+    back empty-string if there's nothing to show there.
+    """
+    top_rows = [r for r in rows if r.get("in_top7") in (True, "True", "true")]
+    rest_rows = [r for r in rows if r not in top_rows]
+
+    if len(rows) < 3:
+        main_text = f"_Quiet news day — only {len(rows)} item(s) found in the last 24 hours._"
+    else:
+        main_sections = _format_bucket_sections(top_rows)
+        main_text = "\n\n".join(main_sections) if main_sections else \
+            "_Quiet news day — no items cleared the quality/relevance bar._"
+
+    if rest_rows:
+        thread_sections = _format_bucket_sections(rest_rows)
+        thread_text = "\n\n".join(thread_sections)
+    else:
+        thread_text = ":card_index_dividers: *No additional items today beyond the main briefing.*"
+
+    return main_text, thread_text
+
+
+def post_to_slack(main_text, thread_text):
+    """
+    Posts the main bulletin, then the remaining items as a thread reply —
+    same two-message shape as the existing Cowork-fed pipeline, but posted
+    directly via the Slack Web API (no relay channel needed — see the
+    chat discussion on why Gemini doesn't need the Cowork-style workaround).
+
+    Requires:
+      SLACK_BOT_TOKEN   — a Slack app's Bot User OAuth Token, scope chat:write
+      SLACK_CHANNEL_ID  — the target channel's ID (not its name)
+    Gated behind POST_TO_SLACK=true so nothing posts unless you opt in.
+    """
+    token = os.environ["SLACK_BOT_TOKEN"]
+    channel = os.environ["SLACK_CHANNEL_ID"]
+    headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
+
+    main_resp = requests.post(
+        "https://slack.com/api/chat.postMessage",
+        headers=headers,
+        json={"channel": channel, "text": main_text, "mrkdwn": True},
+        timeout=10,
+    ).json()
+    if not main_resp.get("ok"):
+        print(f"  [slack] main post failed: {main_resp}")
+        return
+
+    thread_ts = main_resp["ts"]
+    thread_resp = requests.post(
+        "https://slack.com/api/chat.postMessage",
+        headers=headers,
+        json={
+            "channel": channel, "text": thread_text, "mrkdwn": True,
+            "thread_ts": thread_ts,
+        },
+        timeout=10,
+    ).json()
+    if not thread_resp.get("ok"):
+        print(f"  [slack] thread reply failed: {thread_resp}")
+
+
 def main():
     print("Fetching Google Alerts RSS feeds...")
     raw_items = fetch_all_feeds()
     print(f"  {len(raw_items)} raw entries across {len(ALL_FEED_URLS)} feeds.")
+
+    undated = sum(1 for item in raw_items if not item["published"])
+    dated = sorted(item["published"] for item in raw_items if item["published"])
+    if dated:
+        print(f"  feed date range: {dated[0]} -> {dated[-1]} ({undated} undated)")
+    elif raw_items:
+        print(f"  WARNING: none of the {len(raw_items)} entries carry a parseable date.")
 
     windowed = [item for item in raw_items if in_date_window(item["published"])]
     print(f"  {len(windowed)} entries in today's date window.")
@@ -660,7 +859,16 @@ def main():
     # (saves tokens; Gemini still gets the seen-set for near-duplicate/UPDATE
     # judgment on headline-level matches it can't catch by URL alone).
     candidates = [item for item in gated if item["url"] not in seen_urls]
-    print(f"  {len(candidates)} candidates after exact-URL pre-filter, sending to Gemini.")
+    print(f"  {len(candidates)} candidates after exact-URL pre-filter.")
+
+    # Best-effort full-text fetch so Gemini reasons from the real article,
+    # not just the RSS title/snippet. Cap via MAX_ARTICLE_FETCHES if a
+    # given day's batch is unusually large and you want to bound runtime.
+    max_fetches = os.environ.get("MAX_ARTICLE_FETCHES")
+    candidates = enrich_with_article_text(
+        candidates, max_items=int(max_fetches) if max_fetches else None
+    )
+    print(f"  sending {len(candidates)} candidates to Gemini.")
 
     tagged_rows = tag_items_gemini(candidates, seen_urls, seen_stems)
     print(f"  Gemini returned {len(tagged_rows)} tagged row(s).")
@@ -670,6 +878,14 @@ def main():
           f"({sum(1 for r in final_rows if r.get('in_top7'))} marked in_top7=true).")
 
     append_rows(final_rows)
+
+    if os.environ.get("POST_TO_SLACK", "false").lower() == "true":
+        main_text, thread_text = format_slack_bulletin(final_rows)
+        post_to_slack(main_text, thread_text)
+        print("  Posted to Slack.")
+    else:
+        print("  POST_TO_SLACK not set to 'true' — skipping Slack post "
+              "(data still written to ALERTS_CSV_PATH).")
 
 
 if __name__ == "__main__":
