@@ -8,3 +8,4 @@ feedparser
 google-genai
 requests
 trafilatura
+ 
