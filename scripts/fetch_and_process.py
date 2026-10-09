@@ -104,36 +104,41 @@ def row_is_structurally_sane(row):
     return True, ""
 
 
-# The CSV header row is the anchor — NOT the ``` fence. Cowork's post is not
-# always fenced (or the fence can be mangled/prefixed), and a fence-only regex
-# then matches nothing and the whole post is silently ignored. We find the
-# header line anywhere in the message and read to the closing fence if there
-# is one, otherwise to the end of the message.
-HEADER_RE = re.compile(
+# Slack's API `text` for Cowork's post comes in several shapes, and the
+# header row is NOT reliable:
+#   old posts : ```date,headline,...\n<rows>```   (header glued to the fence)
+#   new posts : ```2026-10-08,"headline",...      (header row missing entirely —
+#               Slack now treats text after the opening ``` as a code-block
+#               language label and keeps it out of `text`)
+# So we key on the FENCE, accept either shape, and if the header is missing we
+# assume the standard column order (FIELDNAMES) and say so in the log.
+FENCE_RE = re.compile(r"```(.*?)(?:```|\Z)", re.DOTALL)   # closing fence optional
+ROW_START_RE = re.compile(r"^\s*(?:\d{4}-\d{2}-\d{2}|\d{2}-\d{2}-\d{4}),")
+HEADER_RE = re.compile(  # fallback for unfenced posts
     r"^[^\S\n]*date,headline,url,categories,summary,vibe,in_top7,source[^\n]*$",
     re.IGNORECASE | re.MULTILINE,
 )
+DEFAULT_HEADER = ",".join(FIELDNAMES)
 
 
 def extract_csv_block(text):
-    """Return the CSV text inside one Slack message, or None.
+    """Return CSV text (header line first) from one Slack message, or None.
 
-    - Slack's API HTML-escapes & < > in message text ('&amp;' etc), which
-      corrupts 'Global & Multilateral' and any URL with a query string, so
-      unescape first (this also turns '&lt;url&gt;' back into '<url>' for
-      clean_url() to handle).
-    - Invisible format chars (BOM, zero-width space) before the header are
-      stripped so they can't hide it.
+    Unescapes Slack's &amp; &lt; &gt; (otherwise 'Global & Multilateral' is
+    stored as 'Global &amp; Multilateral') and strips invisible format chars.
     """
     text = "".join(ch for ch in html.unescape(text or "") if unicodedata.category(ch) != "Cf")
-    m = HEADER_RE.search(text)
-    if not m:
-        return None
-    block = text[m.start():]
-    fence = block.find("```")
-    if fence != -1:
-        block = block[:fence]
-    return block.strip()
+    for m in FENCE_RE.finditer(text):
+        body = re.sub(r"^\s*csv[ \t]*\r?\n", "", m.group(1), flags=re.IGNORECASE).strip()
+        if body.lower().startswith("date,headline"):
+            return body
+        if ROW_START_RE.match(body):
+            print("NOTE: fenced block has no header row — assuming the standard 10-column header.")
+            return DEFAULT_HEADER + "\n" + body
+    m = HEADER_RE.search(text)  # unfenced fallback
+    if m:
+        return text[m.start():].split("```")[0].strip()
+    return None
 
 
 def parse_block(csv_text, stats):
@@ -187,6 +192,8 @@ def get_all_csv_blocks(limit=50):
     for i, msg in enumerate(resp.get("messages", [])):
         text = msg.get("text", "")
         block = extract_csv_block(text)
+        if i == 0:  # what Slack actually sent for the newest post (confirms where the header went)
+            print("DEBUG newest msg blocks:", json.dumps(msg.get("blocks"))[:400])
         if i < 10:  # newest 10 messages: always say what we saw, so a miss is never silent
             ts = datetime.fromtimestamp(float(msg["ts"]), tz=timezone.utc).strftime("%Y-%m-%d %H:%MZ")
             print(f"DEBUG msg#{i} {ts} len={len(text)} fence={'```' in text} "
@@ -235,6 +242,17 @@ def main():
     # move is to drop it and log it rather than let it keep skewing every
     # chart on the site. Do this BEFORE building seen_urls, so a corrected
     # repost of the same URL on a later run isn't blocked by the dedup set.
+    # Self-heal rows already on file. A spreadsheet round-trip (Excel/Sheets in a
+    # DD-MM-YYYY locale) rewrites every date as 07-05-2026 and upper-cases
+    # true/false; the dashboard then shows "Invalid date". Slack escaping can also
+    # leave '&amp;' and '<url>' wrappers in stored cells. Fix all of it on every run
+    # so one bad edit can't poison daily_summary.json.
+    for row in items:
+        for k in FIELDNAMES:
+            row[k] = html.unescape((row.get(k) or "").strip())
+        row["date"] = normalize_date(row["date"])
+        row["url"] = clean_url(row["url"]) or row["url"]
+
     sane_items, dropped = [], []
     for row in items:
         ok, reason = row_is_structurally_sane(row)
