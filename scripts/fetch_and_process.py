@@ -310,6 +310,16 @@ def main():
                           f"wrong. Check #mobility-news-dump and add this item manually if genuine.")
                     stats["shifted"] += 1
                     continue
+                   import difflib
+                   def normalize_categories(raw):
+                       out = []
+                       for tok in (raw or "").split("|"):
+                           t = tok.strip()
+                           if t not in KNOWN_BUCKETS:
+                               m = difflib.get_close_matches(t, list(KNOWN_BUCKETS), n=1, cutoff=0.8)
+                               t = m[0] if m else t
+                           out.append(t)
+                       return "|".join(dict.fromkeys(out))
                 if not categories_look_valid(clean["categories"]):
                     print(f"WARNING: unrecognised categories {clean['categories']!r} on "
                           f"{clean['date']} {clean['headline'][:70]!r} — kept as-is, but this "
