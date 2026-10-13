@@ -1,4 +1,4 @@
-import os, csv, json, io, re, unicodedata, html
+import os, csv, json, io, re, unicodedata, html, difflib
 from datetime import datetime, timezone
 import requests
 
@@ -60,6 +60,21 @@ def clean_url(raw):
     if m:
         s = m.group(1)
     return s if URL_RE.match(s) else ""
+
+
+def normalize_categories(raw):
+    """Map near-miss category tokens (e.g. 'Competitor> Countries', stray
+    punctuation or spacing) onto the five known buckets. Tokens that match
+    nothing closely are left as-is so categories_look_valid() still flags them."""
+    out = []
+    for tok in (raw or "").split("|"):
+        t = tok.strip()
+        if t and t not in KNOWN_BUCKETS:
+            m = difflib.get_close_matches(t, sorted(KNOWN_BUCKETS), n=1, cutoff=0.8)
+            t = m[0] if m else t
+        if t:
+            out.append(t)
+    return "|".join(dict.fromkeys(out))
 
 
 def categories_look_valid(raw):
@@ -252,6 +267,7 @@ def main():
             row[k] = html.unescape((row.get(k) or "").strip())
         row["date"] = normalize_date(row["date"])
         row["url"] = clean_url(row["url"]) or row["url"]
+        row["categories"] = normalize_categories(row["categories"])
 
     sane_items, dropped = [], []
     for row in items:
@@ -310,16 +326,7 @@ def main():
                           f"wrong. Check #mobility-news-dump and add this item manually if genuine.")
                     stats["shifted"] += 1
                     continue
-                   import difflib
-                   def normalize_categories(raw):
-                       out = []
-                       for tok in (raw or "").split("|"):
-                           t = tok.strip()
-                           if t not in KNOWN_BUCKETS:
-                               m = difflib.get_close_matches(t, list(KNOWN_BUCKETS), n=1, cutoff=0.8)
-                               t = m[0] if m else t
-                           out.append(t)
-                       return "|".join(dict.fromkeys(out))
+                clean["categories"] = normalize_categories(clean["categories"])
                 if not categories_look_valid(clean["categories"]):
                     print(f"WARNING: unrecognised categories {clean['categories']!r} on "
                           f"{clean['date']} {clean['headline'][:70]!r} — kept as-is, but this "
