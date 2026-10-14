@@ -492,8 +492,8 @@
   {
     "date": "2026-10-13",
     "green": 0,
-    "yellow": 1,
-    "red": 0,
-    "total": 1
+    "yellow": 3,
+    "red": 2,
+    "total": 5
   }
 ]
