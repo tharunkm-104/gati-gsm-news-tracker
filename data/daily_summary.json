@@ -495,5 +495,19 @@
     "yellow": 3,
     "red": 2,
     "total": 5
+  },
+  {
+    "date": "2026-10-14",
+    "green": 0,
+    "yellow": 1,
+    "red": 1,
+    "total": 2
+  },
+  {
+    "date": "2026-10-15",
+    "green": 1,
+    "yellow": 0,
+    "red": 0,
+    "total": 1
   }
 ]
