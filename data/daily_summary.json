@@ -509,5 +509,26 @@
     "yellow": 3,
     "red": 1,
     "total": 7
+  },
+  {
+    "date": "2026-10-16",
+    "green": 3,
+    "yellow": 2,
+    "red": 5,
+    "total": 10
+  },
+  {
+    "date": "2026-10-17",
+    "green": 0,
+    "yellow": 0,
+    "red": 1,
+    "total": 1
+  },
+  {
+    "date": "2026-10-18",
+    "green": 0,
+    "yellow": 0,
+    "red": 1,
+    "total": 1
   }
 ]
