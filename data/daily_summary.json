@@ -526,9 +526,30 @@
   },
   {
     "date": "2026-10-18",
-    "green": 0,
+    "green": 1,
     "yellow": 0,
     "red": 1,
-    "total": 1
+    "total": 2
+  },
+  {
+    "date": "2026-10-19",
+    "green": 1,
+    "yellow": 1,
+    "red": 0,
+    "total": 2
+  },
+  {
+    "date": "2026-10-20",
+    "green": 3,
+    "yellow": 3,
+    "red": 2,
+    "total": 8
+  },
+  {
+    "date": "2026-10-21",
+    "green": 0,
+    "yellow": 1,
+    "red": 2,
+    "total": 3
   }
 ]
