@@ -548,15 +548,22 @@
   {
     "date": "2026-10-21",
     "green": 0,
-    "yellow": 5,
+    "yellow": 6,
     "red": 2,
-    "total": 7
+    "total": 8
   },
   {
     "date": "2026-10-22",
+    "green": 1,
+    "yellow": 3,
+    "red": 4,
+    "total": 8
+  },
+  {
+    "date": "2026-10-23",
     "green": 0,
-    "yellow": 0,
+    "yellow": 1,
     "red": 2,
-    "total": 2
+    "total": 3
   }
 ]
