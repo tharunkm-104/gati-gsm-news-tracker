@@ -2,7 +2,7 @@ name: Daily sentiment update
 
 on:
   schedule:
-    - cron: "30 4 * * 1-5"   # 4:30 UTC = ~10:00 AM IST, weekdays
+    - cron: "30 5 * * 1-5"   # 5:30 UTC = ~11:00 AM IST, weekdays
   workflow_dispatch: {}       # lets you click "Run workflow" manually to test
 
 permissions:
