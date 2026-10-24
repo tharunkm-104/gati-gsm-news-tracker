@@ -3,7 +3,7 @@ name: Google Alerts Ingest (Gemini tagging)
 on:
   schedule:
     # 5:30 AM UTC = 10:00 AM IST
-    - cron: "30 4 * * *"
+    - cron: "47 2 * * *"
   workflow_dispatch: {}  # Allows manual runs from the Actions tab
 
 permissions:
