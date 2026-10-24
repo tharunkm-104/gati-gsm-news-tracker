@@ -15,7 +15,14 @@ jobs:
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
-
+      
+      - name: Log trigger and time
+        run: |
+          echo "event:    ${{ github.event_name }}"
+          echo "schedule: ${{ github.event.schedule }}"
+          echo "now UTC:  $(date -u)"
+          echo "now IST:  $(TZ=Asia/Kolkata date)"
+          
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
