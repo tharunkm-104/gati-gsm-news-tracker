@@ -567,11 +567,18 @@
     "total": 3
   },
   {
-    "date": "2026-10-25",
-    "green": 0,
+    "date": "2026-10-24",
+    "green": 1,
     "yellow": 1,
+    "red": 0,
+    "total": 2
+  },
+  {
+    "date": "2026-10-25",
+    "green": 1,
+    "yellow": 2,
     "red": 2,
-    "total": 3
+    "total": 5
   },
   {
     "date": "2026-10-26",
