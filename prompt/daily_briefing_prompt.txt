@@ -65,6 +65,50 @@ at least 8 follow-up queries, AND fetched at least 8 index pages that loaded. If
 that you still have <3 items, it genuinely is a quiet day — report it as such.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1C. GOOGLE ALERTS LEAD FILE — MANDATORY. Fetch this CSV using the web fetch tool (do not use
+curl or code). It is the output of an automated pipeline over the Google Alerts RSS feeds and
+is updated daily (new rows are added by about 12:00 IST).
+
+Fetch these URLs IN ORDER, stopping at the first one that passes the FRESHNESS CHECK below:
+  1. https://raw.githubusercontent.com/tharunkm-104/gati-gsm-news-tracker/main/data/google_alerts_items.csv?nocache=1
+  2. https://github.com/tharunkm-104/gati-gsm-news-tracker/raw/refs/heads/main/data/google_alerts_items.csv
+  3. https://github.com/tharunkm-104/gati-gsm-news-tracker/blob/main/data/google_alerts_items.csv
+  4. https://raw.githubusercontent.com/tharunkm-104/gati-gsm-news-tracker/main/data/google_alerts_items.csv
+
+FRESHNESS CHECK: find the NEWEST date in the "date" column (the file is sorted oldest-first, so
+read the last rows). The copy is FRESH if that date is today's date or yesterday's date. If the
+newest date is older than yesterday, the copy is a stale cached version — discard it and try
+the next URL. (The real file runs well past 24 October 2026, so a copy ending around 24
+October is always stale.)
+
+If a copy passes: treat every row as a LEAD, not a finished item.
+  - Select rows whose date falls inside your STEP 0.5 window.
+  - Re-open each row's URL and apply STEP 1.5 and STEP 1.6 in full. The pipeline's filtering
+    does not replace your gates. Write the item from the article page, not the row's summary.
+  - Assign bucket, vibe, tags and rank yourself per STEP 2–4. Ignore the row's categories,
+    vibe, theme, countries, stakeholders and in_top7.
+  - Apply STEP 0 dedup as usual. If several rows cover the same event, keep the best-sourced.
+
+If all four URLs are stale or unreachable: treat 1C as empty and continue with 1A and 1B.
+Do not stop, and do not mention this in the bulletins (note it only in the chat window).
+1C supplements 1A and 1B and does not shorten them; the EFFORT FLOOR still applies.
+Columns: date,
+headline, url, categories, summary, vibe, in_top7, source, theme, countries, stakeholders.
+Treat every row as a LEAD, not a finished item.
+  - Select rows whose date falls inside your STEP 0.5 window.
+  - Re-open each row's URL and apply STEP 1.5 and STEP 1.6 in full. The pipeline's own
+    filtering does not replace your gates. Write the bulletin item from the article page,
+    not from the row's summary.
+  - Assign bucket, vibe, tags and rank yourself per STEP 2–4. Ignore the row's categories,
+    vibe, theme, countries and in_top7.
+  - Apply STEP 0 dedup as usual. If several rows cover the same underlying event, keep
+    only the best-sourced one.
+  - If the file cannot be fetched or is empty, skip 1C and continue with 1A and 1B. Do not
+    stop.
+  - 1C supplements 1A and 1B. It does not shorten them, and the EFFORT FLOOR still applies.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
 STEP 1.5: SOURCE QUALITY GATE  [tiers unchanged from your v2 — TIER 1 / 2 / 2B / 2C / 3 / 4]
 Only include an item whose publisher is in the tier list. Prefer the highest tier for any
 fact. EXCLUDE aggregators, SEO/affiliate/"visa news" marketing sites, consultancy lead-gen
@@ -128,7 +172,7 @@ vibe *HEADLINE ≤10 words* / 🗺 *Country* | 📰 *Source* — Published [date
 why-it-matters-for-India / 🔗 URL; single-asterisk bold; blank line between items; omit empty
 buckets; <3 items → "_Quiet news day — only [N] items found._"; nothing beyond top → 🗂 *No
 additional items today beyond the main briefing.*]
-
+Note: There should be no additional comments other than the briefings or no additional briefings. No comments on what kind of search was done, whether past 2 days not posting was included, etc. Those comments are only for the chat window, and not in the main bulletin. 
 STEP 6: POST — main bulletin to #org-whitepapers-articles; remaining items as a THREAD REPLY
 on it. Always do both.
 
