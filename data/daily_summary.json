@@ -652,9 +652,16 @@
   },
   {
     "date": "2026-11-05",
-    "green": 0,
-    "yellow": 1,
+    "green": 1,
+    "yellow": 2,
     "red": 1,
-    "total": 2
+    "total": 4
+  },
+  {
+    "date": "2026-11-06",
+    "green": 0,
+    "yellow": 0,
+    "red": 1,
+    "total": 1
   }
 ]
