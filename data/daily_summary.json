@@ -663,5 +663,19 @@
     "yellow": 0,
     "red": 1,
     "total": 1
+  },
+  {
+    "date": "2026-11-08",
+    "green": 0,
+    "yellow": 2,
+    "red": 0,
+    "total": 2
+  },
+  {
+    "date": "2026-11-09",
+    "green": 5,
+    "yellow": 0,
+    "red": 1,
+    "total": 6
   }
 ]
