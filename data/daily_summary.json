@@ -677,5 +677,19 @@
     "yellow": 0,
     "red": 1,
     "total": 6
+  },
+  {
+    "date": "2026-11-10",
+    "green": 0,
+    "yellow": 0,
+    "red": 3,
+    "total": 3
+  },
+  {
+    "date": "2026-11-11",
+    "green": 0,
+    "yellow": 0,
+    "red": 1,
+    "total": 1
   }
 ]
