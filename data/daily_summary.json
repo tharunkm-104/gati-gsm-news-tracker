@@ -694,9 +694,37 @@
   },
   {
     "date": "2026-11-12",
-    "green": 0,
-    "yellow": 0,
+    "green": 3,
+    "yellow": 3,
+    "red": 3,
+    "total": 9
+  },
+  {
+    "date": "2026-11-13",
+    "green": 2,
+    "yellow": 2,
+    "red": 3,
+    "total": 7
+  },
+  {
+    "date": "2026-11-14",
+    "green": 1,
+    "yellow": 1,
+    "red": 1,
+    "total": 3
+  },
+  {
+    "date": "2026-11-15",
+    "green": 1,
+    "yellow": 3,
     "red": 2,
-    "total": 2
+    "total": 6
+  },
+  {
+    "date": "2026-11-16",
+    "green": 0,
+    "yellow": 1,
+    "red": 0,
+    "total": 1
   }
 ]
