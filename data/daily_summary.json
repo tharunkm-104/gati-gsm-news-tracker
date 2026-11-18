@@ -722,9 +722,23 @@
   },
   {
     "date": "2026-11-16",
-    "green": 1,
+    "green": 2,
+    "yellow": 3,
+    "red": 2,
+    "total": 7
+  },
+  {
+    "date": "2026-11-17",
+    "green": 3,
     "yellow": 2,
-    "red": 1,
-    "total": 4
+    "red": 3,
+    "total": 8
+  },
+  {
+    "date": "2026-11-18",
+    "green": 0,
+    "yellow": 0,
+    "red": 2,
+    "total": 2
   }
 ]
