@@ -2,6 +2,8 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#0A3E3D">
 <title>GATI — Global Skills Mobility News Tracker</title>
 
 <!-- Open Graph / Slack unfurl preview -->
@@ -14,17 +16,21 @@
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
 
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Outfit:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="./assets/gati-chrome.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
   :root{
-    --teal-dark:#0a4f4e;
-    --teal:#0b6b68;
+    --teal-dark:#0A3E3D;
+    --teal:#0E5C59;
     --teal-light:#e8f3f2;
-    --gold:#f2a93c;
-    --gold-dark:#d98f1c;
+    --gold:#D4940A;
+    --gold-dark:#8F6205;
     --red:#e05353;
     --green:#2f9e6e;
-    --amber:#f2a93c;
+    --amber:#f2a93c; /* data colour, stays fixed */
     --ink:#17272a;
     --muted:#5f7574;
     --line:#dfe9e8;
@@ -33,7 +39,7 @@
   *{box-sizing:border-box;}
   body{
     margin:0; padding:0;
-    font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+    font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
     background:#fbfdfd;
     color:var(--ink);
   }
@@ -133,11 +139,11 @@
   .pager a.prev:hover .ar{transform:translateX(-3px);}
   .pager a.next:hover .ar{transform:translateX(3px);}
 
-  footer{
+  .notes{
     margin-top:30px; padding-top:16px; border-top:1px solid var(--line);
     font-size:11.5px; color:var(--muted); line-height:1.6;
   }
-  footer b{color:var(--ink);}
+  .notes b{color:var(--ink);}
   .proto-tag{
     display:inline-block; margin-top:10px; padding:4px 10px; border-radius:20px;
     background:var(--teal-light); color:var(--teal-dark); font-weight:700; font-size:11px;
@@ -149,28 +155,34 @@
     .range-row{flex-direction:column; align-items:flex-start;}
   }
 
-  /* Topbar navigation matching feed.html and analysis.html */
-  .topbar{background:#fff; border-bottom:1px solid var(--line); position:sticky; top:0; z-index:20;}
-  .topbar-in{max-width:1080px; margin:0 auto; padding:10px 24px; display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;}
-  .brand{display:inline-flex; align-items:center; gap:8px; font-weight:800; font-size:13.5px; color:var(--teal-dark); text-decoration:none; letter-spacing:.01em;}
-  .brand::before{content:""; width:8px; height:8px; border-radius:50%; background:var(--gold);}
-  .tabs{display:flex; gap:6px; background:var(--teal-light); padding:4px; border-radius:10px;}
-  .tabs a{padding:6px 14px; border-radius:7px; font-size:12.5px; font-weight:700; color:var(--teal-dark); text-decoration:none; white-space:nowrap;}
-  .tabs a.active{background:var(--teal); color:#fff;}
-  .tabs a:not(.active):hover{background:#d6e9e7;}
 </style>
 </head>
 <body>
-<div class="topbar"><div class="topbar-in">
-  <a class="brand" href="./index.html">GATI · GSM News Tracker</a>
-  <nav class="tabs">
-    <a href="./index.html" class="active" data-carry="./index.html">Dashboard</a>
-    <a href="./feed.html" data-carry="./feed.html">Daily feed</a>
-    <a href="./analysis.html" data-carry="./analysis.html">Analysis</a>
-  </nav>
-</div></div>
+<a class="skip" href="#main">Skip to content</a>
+<header class="site-head">
+  <div class="site-head__in">
+    <a class="site-brand" href="./index.html" aria-label="GATI Global Skills Mobility News Tracker, dashboard">
+      <img src="assets/img/gati-logo-white.svg" alt="GATI">
+      <span class="site-brand__div" aria-hidden="true"></span>
+      <span class="site-brand__txt">
+        <span class="t1">Global Skills Mobility News Tracker</span>
+        <span class="t2">GATI Foundation · Global Access to Talent from India</span>
+      </span>
+    </a>
+    <button class="nav-toggle" type="button" aria-label="Open menu" aria-expanded="false" aria-controls="siteNav">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+    </button>
+    <nav class="site-nav" id="siteNav" aria-label="Main">
+      <a href="./index.html" class="active" aria-current="page" data-carry="./index.html">Dashboard</a>
+      <a href="./feed.html" data-carry="./feed.html">Daily feed</a>
+      <a href="./analysis.html" data-carry="./analysis.html">Analysis</a>
+      <a class="cta" href="https://www.gatifoundation.org/" target="_blank" rel="noopener">gatifoundation.org</a>
+    </nav>
+  </div>
+</header>
 
-<div class="wrap">
+
+<div class="wrap" id="main">
 
   <div class="eyebrow">GATI Resource Center · Live Tracker</div>
   <h1>Global Skills Mobility News Tracker</h1>
@@ -218,7 +230,7 @@
     </div>
   </div>
 
-  <div class="card">
+  <div class="card" data-chart="development-mix">
     <h2>Development mix, selected window</h2>
     <p class="desc">Every item tagged across briefings in the selected window, combined into one bar.</p>
     <div class="mix-row">
@@ -229,7 +241,7 @@
     </div>
   </div>
 
-  <div class="card">
+  <div class="card" data-chart="daily-volume">
     <h2>Daily item volume by types of development</h2>
     <p class="desc">Each bar is one Daily Briefing; height is the number of items tagged that day, split by colour. Gaps are days without a briefing on file.</p>
     <div class="chart-box"><canvas id="stackChart" height="90"></canvas></div>
@@ -247,20 +259,49 @@
     <a class="next" href="./analysis.html">Further analysis <span class="ar">→</span></a>
   </nav>
 
-  <footer>
+  <div class="notes">
     <div><b>What "developments" mean here:</b> each news item is tagged relative to GATI's core thesis — India's labour force as a solution to developed-market demographic shortages — not the tone of the article in general. A stricter US H-1B rule is "negative" even if it's neutral reporting; a new bilateral mobility pact is "positive."</div>
     <div style="margin-top:6px;"><b>Source:</b> GATI Daily Mobility &amp; Migration Briefing, produced by a scheduled Claude Cowork task that searches, ranks India-specific &gt; destination-country &gt; competitor-country &gt; demographic news, tags each item 🔴🟡🟢, and posts to Slack. Counts here are those tags, rolled up — a curated top-line read, not a full census of published mobility news.</div>
     <div class="proto-tag" id="protoTag">Live — updates automatically each weekday morning</div>
-  </footer>
+  </div>
 
 </div>
 
+<footer class="gati-foot">
+  <div class="gati-foot__inner">
+    <div class="gati-foot__brand">
+      <img class="gati-foot__logo" src="assets/img/gati-logo-white.svg" alt="GATI Foundation">
+      <p class="gati-foot__badge">Official GATI Foundation dashboard</p>
+      <p class="gati-foot__tag">Global Access to Talent from India, building the global skills-mobility ecosystem.</p>
+    </div>
+    <div>
+      <h4>Address</h4>
+      <address>GATI Foundation<br>242, Okhla Industrial Estate Phase 3 Rd<br>Okhla Phase III, New Delhi<br>Delhi 110020, India</address>
+    </div>
+    <div>
+      <h4>Contact</h4>
+      <div class="gati-foot__links">
+        <a href="mailto:info@gatifoundation.org">info@gatifoundation.org</a>
+        <a href="https://www.gatifoundation.org/" target="_blank" rel="noopener">gatifoundation.org</a>
+        <a href="https://www.linkedin.com/company/gati-foundation/" target="_blank" rel="noopener">LinkedIn</a>
+      </div>
+    </div>
+  </div>
+  <div class="gati-foot__base">
+    <span>© <span id="gatiYear">2026</span> GATI Foundation. Incubated by The Convergence Foundation.</span>
+    <span>Data: GATI Daily Mobility &amp; Migration Briefing · Tagged by type of development</span>
+  </div>
+</footer>
+<script>document.getElementById("gatiYear").textContent=new Date().getFullYear();</script>
+
+<script src="./assets/gati-ui.js"></script>
 <script>
 const COLORS = { green:'#2f9e6e', yellow:'#f2a93c', red:'#e05353' };
 let DATA = [];
 let LATEST = null;
 let stackChartRef = null;
 let currentRange = '90';
+let VIEW = { rows: [], totals: null, grand: 0 };
 
 function fmtDate(d){
   return new Date(d+'T00:00:00').toLocaleDateString('en-GB',{day:'numeric',month:'short'});
@@ -279,6 +320,7 @@ function filterData(range){
 function render(range){
   currentRange = range;
   const rows = filterData(range);
+  VIEW = { rows, totals: null, grand: 0 };
   const rangeLabels = {
     '7':'trailing 7 days', '30':'trailing 30 days', '90':'trailing 90 days',
     '365':'trailing 1 year', 'all':'full history on file'
@@ -302,6 +344,7 @@ function render(range){
   const totals = rows.reduce((a,d)=>({green:a.green+d.green, yellow:a.yellow+d.yellow, red:a.red+d.red}), {green:0,yellow:0,red:0});
   const grand = totals.green+totals.yellow+totals.red;
   const pct = n => grand ? Math.round((n/grand)*1000)/10 : 0;
+  VIEW.totals = totals; VIEW.grand = grand;
 
   document.getElementById('totalItemsMeta').textContent = grand + ' items';
   document.getElementById('totalDaysMeta').textContent = rows.length;
@@ -351,6 +394,22 @@ function render(range){
     }
   });
 }
+
+const rangeSuffix = () => currentRange === 'all' ? 'all-history' : currentRange + 'd';
+GATI_UI.registerChart('development-mix', () => {
+  const t = VIEW.totals, g = VIEW.grand;
+  const share = n => g ? Math.round((n / g) * 1000) / 10 : 0;
+  return {
+    suffix: rangeSuffix(),
+    header: ['Development type', 'Items', 'Share of items (%)'],
+    rows: g ? [['Positive', t.green, share(t.green)], ['Neutral', t.yellow, share(t.yellow)], ['Negative', t.red, share(t.red)]] : []
+  };
+});
+GATI_UI.registerChart('daily-volume', () => ({
+  suffix: rangeSuffix(),
+  header: ['Briefing date', 'Positive', 'Neutral', 'Negative', 'Total items'],
+  rows: VIEW.rows.map(d => [d.date, d.green, d.yellow, d.red, d.green + d.yellow + d.red])
+}));
 
 document.getElementById('rangeToggle').addEventListener('click', (e)=>{
   if(e.target.tagName !== 'BUTTON') return;
