@@ -737,8 +737,8 @@
   {
     "date": "2026-11-18",
     "green": 0,
-    "yellow": 0,
-    "red": 2,
-    "total": 2
+    "yellow": 1,
+    "red": 3,
+    "total": 4
   }
 ]
