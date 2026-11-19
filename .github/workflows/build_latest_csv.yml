@@ -67,7 +67,5 @@ jobs:
           git add data/latest_alerts.csv
           if git diff --staged --quiet; then
             echo "No changes to latest_alerts.csv"
-          else
-            git commit -m "chore: update latest_alerts.csv [skip ci]"
             git push
           fi
