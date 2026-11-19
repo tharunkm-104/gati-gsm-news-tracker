@@ -4,21 +4,41 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Daily News Feed — GSM News Tracker</title>
+<meta name="theme-color" content="#0A3E3D">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Outfit:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="./assets/gati-chrome.css">
 <link rel="stylesheet" href="./assets/gati.css">
 </head>
 <body>
 
-<div class="topbar"><div class="topbar-in">
-  <a class="brand" href="./index.html">GATI · GSM News Tracker</a>
-  <nav class="tabs">
-    <a href="./index.html" data-carry="./index.html">Dashboard</a>
-    <a href="./feed.html" class="active" data-carry="./feed.html">Daily feed</a>
-    <a href="./analysis.html" data-carry="./analysis.html">Analysis</a>
-  </nav>
-</div></div>
+<a class="skip" href="#main">Skip to content</a>
+<header class="site-head">
+  <div class="site-head__in">
+    <a class="site-brand" href="./index.html" aria-label="GATI Global Skills Mobility News Tracker, dashboard">
+      <img src="assets/img/gati-logo-white.svg" alt="GATI">
+      <span class="site-brand__div" aria-hidden="true"></span>
+      <span class="site-brand__txt">
+        <span class="t1">Global Skills Mobility News Tracker</span>
+        <span class="t2">GATI Foundation · Global Access to Talent from India</span>
+      </span>
+    </a>
+    <button class="nav-toggle" type="button" aria-label="Open menu" aria-expanded="false" aria-controls="siteNav">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+    </button>
+    <nav class="site-nav" id="siteNav" aria-label="Main">
+      <a href="./index.html" data-carry="./index.html">Dashboard</a>
+      <a href="./feed.html" class="active" aria-current="page" data-carry="./feed.html">Daily feed</a>
+      <a href="./analysis.html" data-carry="./analysis.html">Analysis</a>
+      <a class="cta" href="https://www.gatifoundation.org/" target="_blank" rel="noopener">gatifoundation.org</a>
+    </nav>
+  </div>
+</header>
+
 
 <div class="page">
-  <main>
+  <main id="main">
     <div class="eyebrow">GATI Resource Center · Daily Feed</div>
     <h1>Daily news feed</h1>
     <p class="sub">Every item the daily briefing has logged, day by day — the headline, one-line summary and source, plus the tags each item carries. Click any tag to filter by it, or regroup the feed by country or theme.</p>
@@ -40,15 +60,43 @@
     <div id="stateMsg" class="state-msg">Loading latest data…</div>
     <div id="feed"></div>
 
-    <footer>
+    <div class="notes">
       <div><b>How to read the tags.</b> <b>Type of development</b> is judged against GATI's thesis — India's workforce as a solution to developed-market shortages — not the tone of the article. <b>Theme</b> is the item's main topic; <b>Focus</b> is the briefing bucket it was filed under; <b>Country</b> lists the countries the development concerns (“India” alone means an India-only development). When grouped by country, an item covering several countries appears under each.</div>
       <div style="margin-top:6px;" id="footNote"></div>
-    </footer>
+    </div>
   </main>
 
   <aside class="aside" id="filters" aria-label="Filters"></aside>
 </div>
 
+<footer class="gati-foot">
+  <div class="gati-foot__inner">
+    <div class="gati-foot__brand">
+      <img class="gati-foot__logo" src="assets/img/gati-logo-white.svg" alt="GATI Foundation">
+      <p class="gati-foot__badge">Official GATI Foundation dashboard</p>
+      <p class="gati-foot__tag">Global Access to Talent from India, building the global skills-mobility ecosystem.</p>
+    </div>
+    <div>
+      <h4>Address</h4>
+      <address>GATI Foundation<br>242, Okhla Industrial Estate Phase 3 Rd<br>Okhla Phase III, New Delhi<br>Delhi 110020, India</address>
+    </div>
+    <div>
+      <h4>Contact</h4>
+      <div class="gati-foot__links">
+        <a href="mailto:info@gatifoundation.org">info@gatifoundation.org</a>
+        <a href="https://www.gatifoundation.org/" target="_blank" rel="noopener">gatifoundation.org</a>
+        <a href="https://www.linkedin.com/company/gati-foundation/" target="_blank" rel="noopener">LinkedIn</a>
+      </div>
+    </div>
+  </div>
+  <div class="gati-foot__base">
+    <span>© <span id="gatiYear">2026</span> GATI Foundation. Incubated by The Convergence Foundation.</span>
+    <span>Data: GATI Daily Mobility &amp; Migration Briefing · Tagged by type of development</span>
+  </div>
+</footer>
+<script>document.getElementById("gatiYear").textContent=new Date().getFullYear();</script>
+
+<script src="./assets/gati-ui.js"></script>
 <script src="./assets/gati.js"></script>
 <script>
 (function(){
