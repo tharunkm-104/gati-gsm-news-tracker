@@ -1,0 +1,73 @@
+name: Build Lightweight Latest Alerts CSV
+
+on:
+  workflow_run:
+    workflows: ["Google Alerts Ingest (Gemini tagging)"]
+    types:
+      - completed
+  workflow_dispatch: {} # Allows manual runs from the Actions tab
+
+permissions:
+  contents: write
+
+jobs:
+  slice-latest:
+    # Only run if the upstream ingest succeeded (or was triggered manually)
+    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Generate data/latest_alerts.csv (last 3 days, newest first)
+        run: |
+          python3 - << 'EOF'
+          import csv
+          from datetime import datetime, timedelta
+
+          input_path = "data/google_alerts_items.csv"
+          output_path = "data/latest_alerts.csv"
+
+          with open(input_path, mode="r", encoding="utf-8", newline="") as f:
+              reader = csv.DictReader(f)
+              fieldnames = reader.fieldnames
+              rows = list(reader)
+
+          # Parse dates and find the newest date in the file
+          parsed = []
+          for r in rows:
+              d_str = (r.get("date") or "").strip()[:10]
+              try:
+                  d_obj = datetime.strptime(d_str, "%Y-%m-%d")
+                  parsed.append((d_obj, r))
+              except ValueError:
+                  continue
+
+          if parsed:
+              max_date = max(d for d, _ in parsed)
+              cutoff = max_date - timedelta(days=3)
+              recent = [r for d, r in parsed if d >= cutoff]
+              recent.reverse()  # Newest rows at the top
+          else:
+              recent = rows[-50:][::-1]  # Fallback if date format varies
+
+          with open(output_path, mode="w", encoding="utf-8", newline="") as f:
+              writer = csv.DictWriter(f, fieldnames=fieldnames)
+              writer.writeheader()
+              writer.writerows(recent)
+
+          print(f"Wrote {len(recent)} recent rows to {output_path}")
+          EOF
+
+      - name: Commit and push latest_alerts.csv
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/latest_alerts.csv
+          if git diff --staged --quiet; then
+            echo "No changes to latest_alerts.csv"
+          else
+            git commit -m "chore: update latest_alerts.csv [skip ci]"
+            git push
+          fi
