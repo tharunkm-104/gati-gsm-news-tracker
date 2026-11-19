@@ -4,22 +4,42 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Further Analysis — GSM News Tracker</title>
+<meta name="theme-color" content="#0A3E3D">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Outfit:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="./assets/gati-chrome.css">
 <link rel="stylesheet" href="./assets/gati.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 </head>
 <body>
 
-<div class="topbar"><div class="topbar-in">
-  <a class="brand" href="./index.html">GATI · GSM News Tracker</a>
-  <nav class="tabs">
-    <a href="./index.html" data-carry="./index.html">Dashboard</a>
-    <a href="./feed.html" data-carry="./feed.html">Daily feed</a>
-    <a href="./analysis.html" class="active" data-carry="./analysis.html">Analysis</a>
-  </nav>
-</div></div>
+<a class="skip" href="#main">Skip to content</a>
+<header class="site-head">
+  <div class="site-head__in">
+    <a class="site-brand" href="./index.html" aria-label="GATI Global Skills Mobility News Tracker, dashboard">
+      <img src="assets/img/gati-logo-white.svg" alt="GATI">
+      <span class="site-brand__div" aria-hidden="true"></span>
+      <span class="site-brand__txt">
+        <span class="t1">Global Skills Mobility News Tracker</span>
+        <span class="t2">GATI Foundation · Global Access to Talent from India</span>
+      </span>
+    </a>
+    <button class="nav-toggle" type="button" aria-label="Open menu" aria-expanded="false" aria-controls="siteNav">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+    </button>
+    <nav class="site-nav" id="siteNav" aria-label="Main">
+      <a href="./index.html" data-carry="./index.html">Dashboard</a>
+      <a href="./feed.html" data-carry="./feed.html">Daily feed</a>
+      <a href="./analysis.html" class="active" aria-current="page" data-carry="./analysis.html">Analysis</a>
+      <a class="cta" href="https://www.gatifoundation.org/" target="_blank" rel="noopener">gatifoundation.org</a>
+    </nav>
+  </div>
+</header>
+
 
 <div class="page">
-  <main>
+  <main id="main">
     <div class="eyebrow">GATI Resource Center · Further Analysis</div>
     <h1>Where is the news turning — and for whom?</h1>
     <p class="sub">Slice the full briefing log by country, theme, type of development, focus bucket, source or period. Everything on this page — the numbers, the takeaways and every chart — recalculates from your filters. Click a bar, row or cell to drill in.</p>
@@ -33,7 +53,7 @@
 
       <div class="card take"><h2>What stands out</h2><p class="desc">Auto-written from the items currently selected.</p><ul id="takeaways"></ul></div>
 
-      <div class="card">
+      <div class="card" data-chart="developments-over-time">
         <h2>Developments over time</h2>
         <p class="desc">Weekly item counts by type of development (bars, left axis) and net developments balance — positive share minus negative share (line, right axis). Larger dots mean more items behind that week's reading; empty weeks are stretches with no briefings on file.</p>
         <div class="chart-box"><canvas id="timeChart"></canvas></div>
@@ -46,12 +66,12 @@
       </div>
 
       <div class="two">
-        <div class="card">
+        <div class="card" data-chart="by-country">
           <div class="card-h"><div><h2>Developments by country</h2><p class="desc">Negative items pull left, positive pull right. Destination and competitor countries only.</p></div>
-            <div class="mini-seg" id="cSort"><button type="button" data-s="volume" class="active">By volume</button><button type="button" data-s="net">By net</button></div></div>
+            <div class="card-tools"><div class="mini-seg" id="cSort"><button type="button" data-s="volume" class="active">By volume</button><button type="button" data-s="net">By net</button></div></div></div>
           <div id="countryBars"></div>
         </div>
-        <div class="card">
+        <div class="card" data-chart="by-theme">
           <h2>Developments by theme</h2>
           <p class="desc">Share of positive, neutral and negative items within each theme.</p>
           <div id="themeBars"></div>
@@ -63,7 +83,7 @@
         </div>
       </div>
 
-      <div class="card">
+      <div class="card" data-chart="country-theme-heatmap">
         <h2>Country × theme heatmap</h2>
         <p class="desc">Where the positive, neutral and negative news actually sits. Each cell shows the item count; colour is net developments balance (fainter where fewer items). Click a cell to filter to that country and theme.</p>
         <div class="hm-wrap" id="heatmap"></div>
@@ -71,12 +91,12 @@
       </div>
 
       <div class="two">
-        <div class="card">
+        <div class="card" data-chart="briefing-focus">
           <h2>Briefing focus</h2>
           <p class="desc">The prompt's buckets. An item can sit in more than one.</p>
           <div id="bucketBars"></div>
         </div>
-        <div class="card">
+        <div class="card" data-chart="by-source">
           <h2>Where the news comes from</h2>
           <p class="desc">Top publishers by items logged, coloured by type of development. <span style="color:#b23a3a;font-weight:700">✕</span> marks sources on the prompt's exclude list.</p>
           <div id="sourceBars"></div>
@@ -84,21 +104,50 @@
       </div>
     </div>
 
-    <footer>
+    <div class="notes">
       <div><b>Reading the numbers.</b> Net developments balance = share of positive items minus share of negative items, in percentage points (pp). Developments are tagged against GATI's thesis — India's workforce as a solution to developed-market shortages — so a stricter US visa rule is negative even when the reporting is neutral. Figures count every item logged, so they can differ slightly from the dashboard if repeated stories are present (use “Hide repeated headlines” to strip them).</div>
       <div style="margin-top:6px;" id="footNote"></div>
-    </footer>
+    </div>
   </main>
 
   <aside class="aside" id="filters" aria-label="Filters"></aside>
 </div>
 
+<footer class="gati-foot">
+  <div class="gati-foot__inner">
+    <div class="gati-foot__brand">
+      <img class="gati-foot__logo" src="assets/img/gati-logo-white.svg" alt="GATI Foundation">
+      <p class="gati-foot__badge">Official GATI Foundation dashboard</p>
+      <p class="gati-foot__tag">Global Access to Talent from India, building the global skills-mobility ecosystem.</p>
+    </div>
+    <div>
+      <h4>Address</h4>
+      <address>GATI Foundation<br>242, Okhla Industrial Estate Phase 3 Rd<br>Okhla Phase III, New Delhi<br>Delhi 110020, India</address>
+    </div>
+    <div>
+      <h4>Contact</h4>
+      <div class="gati-foot__links">
+        <a href="mailto:info@gatifoundation.org">info@gatifoundation.org</a>
+        <a href="https://www.gatifoundation.org/" target="_blank" rel="noopener">gatifoundation.org</a>
+        <a href="https://www.linkedin.com/company/gati-foundation/" target="_blank" rel="noopener">LinkedIn</a>
+      </div>
+    </div>
+  </div>
+  <div class="gati-foot__base">
+    <span>© <span id="gatiYear">2026</span> GATI Foundation. Incubated by The Convergence Foundation.</span>
+    <span>Data: GATI Daily Mobility &amp; Migration Briefing · Tagged by type of development</span>
+  </div>
+</footer>
+<script>document.getElementById("gatiYear").textContent=new Date().getFullYear();</script>
+
+<script src="./assets/gati-ui.js"></script>
 <script src="./assets/gati.js"></script>
 <script>
 (function(){
   const G = window.GATI;
   const C = { positive:'#2f9e6e', neutral:'#f2a93c', negative:'#e05353' };
   let F = null, DATA = null, timeChart = null, cSort = 'volume';
+  const LAST = {};
   const $ = id => document.getElementById(id);
   const pct = (a, n) => n ? Math.round(a / n * 100) : 0;
   const netCls = v => v > 0.5 ? 'pos' : v < -0.5 ? 'neg' : 'zero';
@@ -167,6 +216,7 @@
     const weeks = []; for(let w = first; w <= last; w = G.addDays(w, 7)) weeks.push(w);
     const m = byKey(items, i => [G.weekStart(i.date)]);
     const tal = weeks.map(w => G.tally(m.get(w) || []));
+    LAST.time = { weeks, tal };
     const cfg = {
       type: 'bar',
       data: {
@@ -200,7 +250,8 @@
   function renderCountries(items){
     let rows = destStats(items).sort((a, b) => b.n - a.n).slice(0, 12);
     if(cSort === 'net') rows = rows.filter(r => r.n >= 3).sort((a, b) => b.net - a.net);
-    if(!rows.length){ $('countryBars').innerHTML = '<div class="f-empty">No country-level items in this selection.</div>'; return; }
+    if(!rows.length){ LAST.countries = []; $('countryBars').innerHTML = '<div class="f-empty">No country-level items in this selection.</div>'; return; }
+    LAST.countries = rows;
     const max = Math.max(...rows.map(r => Math.max(r.t.positive, r.t.negative)), 1);
     const sel = F.state.country;
     $('countryBars').innerHTML = `<div class="dv-axis"><div></div><div><span>← negative</span><span>positive →</span></div><div style="text-align:right">net</div></div>` +
@@ -225,16 +276,17 @@
   function renderThemes(items){
     const m = byKey(items, i => [i.theme]);
     const rows = [...m.entries()].map(([k, v]) => ({ key: k, t: G.tally(v) })).sort((a, b) => b.t.n - a.t.n);
-    stackRows($('themeBars'), rows, 'theme');
+    LAST.themes = rows; stackRows($('themeBars'), rows, 'theme');
   }
   function renderBuckets(items){
     const m = byKey(items, i => i.buckets.length ? i.buckets : ['Unclassified']);
     const rows = [...m.entries()].map(([k, v]) => ({ key: k, t: G.tally(v) })).sort((a, b) => b.t.n - a.t.n);
-    stackRows($('bucketBars'), rows, 'bucket');
+    LAST.buckets = rows; stackRows($('bucketBars'), rows, 'bucket');
   }
   function renderSources(items){
     const m = byKey(items, i => [i.source]);
     const rows = [...m.entries()].map(([k, v]) => ({ key: k, t: G.tally(v), ex: v.some(i => i.excluded) })).sort((a, b) => b.t.n - a.t.n).slice(0, 10);
+    LAST.sources = rows;
     const max = Math.max(...rows.map(r => r.t.n), 1), sel = F.state.source;
     $('sourceBars').innerHTML = rows.map(r => `<div class="st-row src${sel.has(r.key) ? ' sel' : ''}" data-f="source" data-v="${G.esc(r.key)}" title="${G.esc(r.key)}: ${r.t.positive} positive · ${r.t.neutral} neutral · ${r.t.negative} negative${r.ex ? ' — on exclude list' : ''}">
       <div class="st-name">${G.esc(r.key)}${r.ex ? '<span class="flag">✕</span>' : ''}</div>
@@ -257,6 +309,7 @@
     if(themeSet.has('Untagged')) themes.push('Untagged');
     if(!countries.length){ $('heatmap').innerHTML = '<div class="f-empty">No country-level items in this selection.</div>'; return; }
     const cell = new Map();
+    LAST.heat = { countries, themes, cell };
     items.forEach(i => new Set(i.countries).forEach(c => { const k = c + '||' + i.theme; if(!cell.has(k)) cell.set(k, []); cell.get(k).push(i); }));
     let h = '<table class="hm"><thead><tr><th class="rh"></th>' + themes.map(t => `<th title="${G.esc(t)}">${G.esc(G.THEME_SHORT[t] || t)}</th>`).join('') + '</tr></thead><tbody>';
     countries.forEach(c => {
@@ -285,6 +338,33 @@
     renderCountries(items); renderThemes(items); renderHeatmap(items);
     renderBuckets(items); renderSources(items);
   }
+
+  /* ---------- CSV providers for the download menu ---------- */
+  const r1 = v => Math.round(v * 10) / 10;
+  const tallyRow = (label, t) => [label, t.n, t.positive, t.neutral, t.negative, r1(G.net(t))];
+  const TALLY_HEAD = ['Items', 'Positive', 'Neutral', 'Negative', 'Net developments balance (pp)'];
+  const shareRow = (label, t) => [label, t.n, t.positive, t.neutral, t.negative, r1(pct(t.positive, t.n)), r1(pct(t.neutral, t.n)), r1(pct(t.negative, t.n))];
+  const SHARE_HEAD = ['Items', 'Positive', 'Neutral', 'Negative', 'Positive (%)', 'Neutral (%)', 'Negative (%)'];
+
+  GATI_UI.registerChart('developments-over-time', () => {
+    const d = LAST.time; if(!d) return { header: [], rows: [] };
+    return { header: ['Week starting (Monday)', 'Positive', 'Neutral', 'Negative', 'Items', 'Net developments balance (pp)'],
+      rows: d.weeks.map((w, i) => { const t = d.tal[i]; return [w, t.positive, t.neutral, t.negative, t.n, t.n ? r1(G.net(t)) : '']; }) };
+  });
+  GATI_UI.registerChart('by-country', () => ({ suffix: cSort,
+    header: ['Country'].concat(TALLY_HEAD), rows: (LAST.countries || []).map(r => tallyRow(r.key, r.t)) }));
+  GATI_UI.registerChart('by-theme', () => ({
+    header: ['Theme'].concat(SHARE_HEAD), rows: (LAST.themes || []).map(r => shareRow(r.key, r.t)) }));
+  GATI_UI.registerChart('briefing-focus', () => ({
+    header: ['Briefing focus'].concat(SHARE_HEAD), rows: (LAST.buckets || []).map(r => shareRow(r.key, r.t)) }));
+  GATI_UI.registerChart('by-source', () => ({
+    header: ['Source'].concat(SHARE_HEAD, ['On exclude list']), rows: (LAST.sources || []).map(r => shareRow(r.key, r.t).concat([r.ex ? 'Yes' : 'No'])) }));
+  GATI_UI.registerChart('country-theme-heatmap', () => {
+    const h = LAST.heat; if(!h) return { header: [], rows: [] };
+    const rows = [];
+    h.countries.forEach(c => h.themes.forEach(th => { const v = h.cell.get(c + '||' + th); if(v) rows.push(tallyRow(c, G.tally(v)).slice(0, 1).concat([th], tallyRow(c, G.tally(v)).slice(1))); }));
+    return { header: ['Country', 'Theme'].concat(TALLY_HEAD), rows };
+  });
 
   // drill-down clicks
   $('content').addEventListener('click', e => {     const td = e.target.closest('td[data-c]');     if(td){ F.setOnly({ country: td.dataset.c, theme: td.dataset.t }); return; }     const row = e.target.closest('[data-f]'); if(!row) return;     F.toggle(row.dataset.f, row.dataset.v);   });$('cSort').addEventListener('click', e => {
