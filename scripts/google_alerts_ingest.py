@@ -140,7 +140,11 @@ FEEDS = {
         "https://www.google.com/alerts/feeds/05363041802822053495/5467385533706297040",
         "https://www.google.com/alerts/feeds/05363041802822053495/572631228672254336",
         "https://www.google.com/alerts/feeds/05363041802822053495/13233358519035931584",
-        "https://www.google.com/alerts/feeds/05363041802822053495/808210082760888087"
+        "https://www.google.com/alerts/feeds/05363041802822053495/808210082760888087",
+        "https://www.google.co.in/alerts/feeds/05363041802822053495/4758122026313510876",
+        "https://www.google.co.in/alerts/feeds/05363041802822053495/16987754936965951835",
+        "https://www.google.co.in/alerts/feeds/05363041802822053495/2952985969749403611",
+        "https://www.google.co.in/alerts/feeds/05363041802822053495/12120273631982633349"
     ],
 }
 ALL_FEED_URLS = [url for urls in FEEDS.values() for url in urls]
